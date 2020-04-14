@@ -60,19 +60,8 @@ def detector(input_image: cv2.UMat,
              max_radius: float = 0) -> list:
     gray_image = get_black_white_image(input_image, block_size, level_black)
     canny_image = cv2.Canny(gray_image, 100, 50)
-    cv2.imshow("Show Canny", canny_image)
-
-    circles_centers = detect_centers_of_circles(canny_image, find_rate, threshold_center, min_radius, max_radius)
     lines = detect_lines_without_width(canny_image, threshold_line, min_line_length, max_line_gap)
-
-    circles = find_radius_and_line_width(gray_image, circles_centers)
-
-    print(lines.__len__())
-    print("\n".join(map(str, lines)))
-    print(circles.__len__())
-    print("\n".join(map(str, circles)))
-    show_finds(input_image, lines, circles)
-    return lines + circles
+    return lines
 
 
 def get_black_white_image(const_image: cv2.UMat,
@@ -105,48 +94,6 @@ def detect_lines_without_width(const_image: np.ndarray,
             x_first, y_first, x_second, y_second = coordinate[0]
             lines.append(Line(x_first, y_first, x_second, y_second, 1))
     return lines
-
-
-def detect_centers_of_circles(const_image: np.ndarray,
-                              find_rate: float = 1.2,
-                              threshold_center: int = 100,
-                              min_radius: float = 0,
-                              max_radius: float = 0) -> list:
-    centers: list = cv2.HoughCircles(const_image,
-                                     cv2.HOUGH_GRADIENT,
-                                     find_rate,
-                                     minDist=10,
-                                     param1=100,  # threshold for Canny edge detector
-                                     param2=threshold_center,  # threshold for center detection
-                                     minRadius=min_radius,
-                                     maxRadius=max_radius)
-    if centers is not None:
-        return centers[0, :]
-    else:
-        return list()
-
-
-def find_radius_and_line_width(canny_image: np.ndarray, centers) -> list:
-    circles = []
-    if centers is not None:
-        for center in centers:
-            x_center, y_center, radius = center
-            circles.append(Circle(x_center, y_center, radius, 0))
-    return circles
-
-
-def show_finds(const_image: cv2.UMat, lines: list, circles: list):
-    image = cv2.UMat(const_image).get()
-    if lines:
-        for line in lines:
-            cv2.line(image, (line.x_first, line.y_first), (line.x_second, line.y_second),
-                     (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)), line.line_width)
-    if circles:
-        for circle in circles:
-            cv2.circle(image, (circle.x_center, circle.y_center), round(circle.radius),
-                       (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)), circle.line_width)
-    cv2.imshow("Show", image)
-    cv2.waitKey()
 
 
 input_image = cv2.imread("/home/alex/Pictures/MapLapFile6.png")
