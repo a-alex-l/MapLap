@@ -39,4 +39,4 @@ class Circle:
         return self.x_center.__str__() + " " + self.y_center.__str__() + " " \
                + self.radius.__str__() + " " + self.line_width.__str__()
 
-# detector branch
+# from detector branch
