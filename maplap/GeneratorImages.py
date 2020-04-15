@@ -1,5 +1,5 @@
 import random
-from source.Detector import *
+from maplap.Detector import *
 
 
 def generator_images(random_seed=0, circles=5, lines=5, max_thickness=1, width=100, height=100) -> list:
