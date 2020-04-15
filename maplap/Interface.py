@@ -3,7 +3,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 import design
 
 #to const file?
-START_PICTURE = "source/templates/MapLap.png"
+START_PICTURE = "maplap/templates/MapLap.png"
 SIZE_PANEL = 140
 SIZE_LINE = 25
 BORDER = 9
