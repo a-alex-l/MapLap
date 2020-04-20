@@ -1,4 +1,4 @@
-##interface
+"""constant file"""
 
 START_PICTURE = "maplap/templates/MapLap.png"
 TEMP = "maplap/templates/temp.png"
@@ -23,5 +23,3 @@ TEMPLATE_FILE = "*.png *.pdf *.jpg *.bmp"
 CHANGE = True
 PICTURE_OUT = False
 DELETE = True
-
-##

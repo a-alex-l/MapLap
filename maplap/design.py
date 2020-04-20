@@ -1,6 +1,7 @@
 """design"""
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class UiMapLap():
     """Main window ui"""
     # pylint: disable=R0902

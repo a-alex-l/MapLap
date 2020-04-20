@@ -7,6 +7,7 @@ import constant as C
 WIDTH_SCREEN = C.ZERO
 HEIGHT_SCREEN = C.ZERO
 
+
 class Rectangle:
     """Rectangle struct"""
     def __init__(self, x1=C.ZERO, y1=C.ZERO, x2=C.ZERO, y2=C.ZERO):
@@ -22,6 +23,7 @@ class Rectangle:
     def also_none_for_pylint(self):
         """also do nothing"""
         self.also_none_for_pylint()
+
 
 class MainWindow(QtWidgets.QMainWindow, UiMapLap):
     """Main window"""
@@ -69,12 +71,12 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
 
     def __save_tex(self):
         """changing, save ..."""
-        self.resize_window() #doesn't do anything yet
+        self.resize_window()  # doesn't do anything yet
         ##
 
     def __save_pdf(self):
         """saving pdf"""
-        self.picture_in.pixmap().save("maplap/templates/temp.pdf", "PDF") #it doesn't seem to work
+        self.picture_in.pixmap().save("maplap/templates/temp.pdf", "PDF")  # it doesn't seem to work
         ##
 
     def __cropping(self):
@@ -203,7 +205,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
 
     def keyPressEvent(self, event):
         """keyboard click events"""
-        if event.key() == QtCore.Qt.Key_Return: #enter
+        if event.key() == QtCore.Qt.Key_Return:  # enter
             if self.is_area_up:
                 self.resizeEvent(C.UPDATE)
                 self.check_area_coord()
@@ -333,6 +335,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             return Qt.QPen(QtCore.Qt.black, C.BLACK_W)
         return Qt.QPen(QtCore.Qt.white, C.WHITE_W)
 
+
 def main():
     # pylint: disable=W0603
     # understand how to handle the window size does not globally
@@ -345,6 +348,6 @@ def main():
     window.show()
     app.exec_()
 
+
 if __name__ == '__main__':
     main()
-    
