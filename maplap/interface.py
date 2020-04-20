@@ -2,7 +2,7 @@
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from maplap.design import UiMapLap
-import constant as C
+import maplap.constant as C
 
 WIDTH_SCREEN = C.ZERO
 HEIGHT_SCREEN = C.ZERO
