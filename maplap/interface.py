@@ -1,6 +1,6 @@
 """interface"""
 import sys
-# from PyQt5 import QtCore, QtGui, QtWidgets, Qt
+from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from maplap.design import UiMapLap
 import constant as C
 
