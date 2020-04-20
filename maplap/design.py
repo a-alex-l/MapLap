@@ -2,8 +2,9 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class UiMapLap():
+class UiMapLap:
     """Main window ui"""
+
     # pylint: disable=R0902
     # pylint: disable=R0915
     # pylint: disable=W0201
@@ -18,8 +19,9 @@ class UiMapLap():
         maplap.setStyleSheet("background-color: rgb(180, 200, 200);")
         self.central_widget = QtWidgets.QWidget(maplap)
         self.central_widget.setEnabled(True)
-        size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred,
-                                            QtWidgets.QSizePolicy.Preferred)
+        size_policy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred
+        )
         size_policy.setHorizontalStretch(100)
         size_policy.setVerticalStretch(100)
         size_policy.setHeightForWidth(self.central_widget.sizePolicy().hasHeightForWidth())
@@ -47,16 +49,18 @@ class UiMapLap():
         self.pencil = QtWidgets.QPushButton(self.panel_tab)
         self.pencil.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("maplap/templates/pensil.png"), QtGui.QIcon.Normal,
-                       QtGui.QIcon.Off)
+        icon.addPixmap(
+            QtGui.QPixmap("maplap/templates/pensil.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off,
+        )
         self.pencil.setIcon(icon)
         self.pencil.setObjectName("pencil")
         self.painting.addWidget(self.pencil)
         self.eraser = QtWidgets.QPushButton(self.panel_tab)
         self.eraser.setText("")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("maplap/templates/eraser.png"), QtGui.QIcon.Normal,
-                        QtGui.QIcon.Off)
+        icon1.addPixmap(
+            QtGui.QPixmap("maplap/templates/eraser.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off,
+        )
         self.eraser.setIcon(icon1)
         self.eraser.setObjectName("eraser")
         self.painting.addWidget(self.eraser)
@@ -94,11 +98,13 @@ class UiMapLap():
         self.picture_in.setText("")
         self.picture_in.setObjectName("picture_in")
         self.grid_layout.addWidget(self.picture_in, 0, 3, 1, 1)
-        spacer_item = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding,
-                                            QtWidgets.QSizePolicy.Minimum)
+        spacer_item = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.grid_layout.addItem(spacer_item, 0, 2, 1, 1)
-        spacer_item_1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding,
-                                              QtWidgets.QSizePolicy.Minimum)
+        spacer_item_1 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.grid_layout.addItem(spacer_item_1, 0, 8, 1, 1)
         self.line = QtWidgets.QFrame(self.central_widget)
         self.line.setFrameShape(QtWidgets.QFrame.VLine)
@@ -114,11 +120,13 @@ class UiMapLap():
         self.picture_out.setText("")
         self.picture_out.setObjectName("picture_out")
         self.grid_layout.addWidget(self.picture_out, 0, 7, 1, 1)
-        spacer_item_2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding,
-                                              QtWidgets.QSizePolicy.Minimum)
+        spacer_item_2 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.grid_layout.addItem(spacer_item_2, 0, 6, 1, 1)
-        spacer_item_3 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding,
-                                              QtWidgets.QSizePolicy.Minimum)
+        spacer_item_3 = QtWidgets.QSpacerItem(
+            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
         self.grid_layout.addItem(spacer_item_3, 0, 4, 1, 1)
         maplap.setCentralWidget(self.central_widget)
         self.retranslate_ui(maplap)
@@ -135,12 +143,15 @@ class UiMapLap():
         self.save_tex.setText(_translate("maplap", "save tex"))
         self.save_pdf.setText(_translate("maplap", "save pdf"))
         self.rotate.setText(_translate("maplap", "rotate"))
-        self.panel_settings.setTabText(self.panel_settings.indexOf(self.panel_tab),
-                                       _translate("maplap", "panel"))
+        self.panel_settings.setTabText(
+            self.panel_settings.indexOf(self.panel_tab), _translate("maplap", "panel")
+        )
         self.plain_text_settings.setPlainText(
-            _translate("maplap", "Здесь будут размещены необходимые значения для алгоритма"))
-        self.panel_settings.setTabText(self.panel_settings.indexOf(self.settings_tab),
-                                       _translate("maplap", "settings"))
+            _translate("maplap", "Здесь будут размещены необходимые значения для алгоритма")
+        )
+        self.panel_settings.setTabText(
+            self.panel_settings.indexOf(self.settings_tab), _translate("maplap", "settings"),
+        )
 
     def none_for_pylint(self):
         """do nothing"""

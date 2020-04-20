@@ -10,6 +10,7 @@ HEIGHT_SCREEN = C.ZERO
 
 class Rectangle:
     """Rectangle struct"""
+
     def __init__(self, x1=C.ZERO, y1=C.ZERO, x2=C.ZERO, y2=C.ZERO):
         self.x_start = x1
         self.y_start = y1
@@ -27,6 +28,7 @@ class Rectangle:
 
 class MainWindow(QtWidgets.QMainWindow, UiMapLap):
     """Main window"""
+
     # pylint: disable=R0902
     # 9/7 attributes - I will fix it later
 
@@ -112,8 +114,10 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         width_some = C.DOUBLE * C.SIZE_LINE + C.SIZE_PANEL
         new_width = min(pixmap.width() + pixmap_res.width() + width_some, WIDTH_SCREEN)
         self.setMinimumSize(QtCore.QSize(new_width / pixmap.height() * C.MIN_H, C.MIN_H))
-        self.resize((pixmap.width() + pixmap_res.width()) * self.picture_factor + C.SIZE_PANEL,
-                    pixmap.height() * self.picture_factor)
+        self.resize(
+            (pixmap.width() + pixmap_res.width()) * self.picture_factor + C.SIZE_PANEL,
+            pixmap.height() * self.picture_factor,
+        )
         self.update_image()
 
     def update_image(self):
@@ -209,9 +213,12 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             if self.is_area_up:
                 self.resizeEvent(C.UPDATE)
                 self.check_area_coord()
-                copy = self.picture_in.pixmap().copy(self.area.x_start, self.area.y_start,
-                                                     self.area.x_end - self.area.x_start,
-                                                     self.area.y_end - self.area.y_start)
+                copy = self.picture_in.pixmap().copy(
+                    self.area.x_start,
+                    self.area.y_start,
+                    self.area.x_end - self.area.x_start,
+                    self.area.y_end - self.area.y_start,
+                )
                 self.picture_in.setPixmap(copy)
                 self.save_image()
                 self.resize_window()
@@ -241,12 +248,12 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
 
     def resizeEvent(self, event):
         """the resize event of the window"""
-        self.picture_in.setPixmap(self.picture_in._pixmap.scaled(
-            self.width(), self.height(),
-            QtCore.Qt.KeepAspectRatio))
-        self.picture_out.setPixmap(self.picture_out._pixmap.scaled(
-            self.width(), self.height(),
-            QtCore.Qt.KeepAspectRatio))
+        self.picture_in.setPixmap(
+            self.picture_in._pixmap.scaled(self.width(), self.height(), QtCore.Qt.KeepAspectRatio)
+        )
+        self.picture_out.setPixmap(
+            self.picture_out._pixmap.scaled(self.width(), self.height(), QtCore.Qt.KeepAspectRatio)
+        )
         self.is_area_up = False
 
     def do_nothing(self, event):
@@ -283,9 +290,12 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             paint.begin(self.picture_in.pixmap())
             paint.setOpacity(C.OPACITY_AREA)
             paint.setBrush(QtGui.QBrush(QtCore.Qt.blue))
-            paint.drawRect(self.area.x_start, self.area.y_start,
-                           self.area.x_end - self.area.x_start,
-                           self.area.y_end - self.area.y_start)
+            paint.drawRect(
+                self.area.x_start,
+                self.area.y_start,
+                self.area.x_end - self.area.x_start,
+                self.area.y_end - self.area.y_start,
+            )
             paint.end()
             self.is_area_up = True
 
@@ -326,8 +336,12 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         draw = Qt.QPainter(self.picture_in.pixmap())
         draw.setPen(self.set_pen(C.DELETE))
         draw.setBrush(QtCore.Qt.white)
-        draw.drawRect(self.area.x_start, self.area.y_start,
-                      self.area.x_end - self.area.x_start, self.area.y_end - self.area.y_start)
+        draw.drawRect(
+            self.area.x_start,
+            self.area.y_start,
+            self.area.x_end - self.area.x_start,
+            self.area.y_end - self.area.y_start,
+        )
 
     def set_pen(self, delete=False):
         """sets the desired pen"""
@@ -349,5 +363,5 @@ def main():
     app.exec_()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
