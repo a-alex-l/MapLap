@@ -1,7 +1,7 @@
 """interface"""
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
-from maplap.design import Ui_MapLap
+from maplap.design import UiMapLap
 import constant as C
 
 WIDTH_SCREEN = C.ZERO
@@ -23,7 +23,7 @@ class Rectangle:
         """also do nothing"""
         self.also_none_for_pylint()
 
-class MainWindow(QtWidgets.QMainWindow, Ui_MapLap):
+class MainWindow(QtWidgets.QMainWindow, UiMapLap):
     """Main window"""
     # pylint: disable=R0902
     # 9/7 attributes - I will fix it later
@@ -44,7 +44,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MapLap):
 
     def __init__(self):
         super().__init__()
-        self.setupUi(self)
+        self.setup_ui(self)
         self.cropping.clicked.connect(self.__cropping)
         self.select_area.clicked.connect(self.__select_area)
         self.choose_file.clicked.connect(self.__choose_file)
