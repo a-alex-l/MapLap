@@ -1,7 +1,6 @@
-import cv2
 import math
+import cv2
 import numpy as np
-import random
 
 
 class Line:
@@ -9,19 +8,17 @@ class Line:
     y_first: int = 0
     x_second: int = 0
     y_second: int = 0
-    line_width: int = 0
+    line_width: int = 1
 
     def __init__(self,
                  x_first: int,
                  y_first: int,
                  x_second: int,
-                 y_second: int,
-                 line_width: int = 1):
+                 y_second: int):
         self.x_first = x_first
         self.y_first = y_first
         self.x_second = x_second
         self.y_second = y_second
-        self.line_width = line_width
 
     def __repr__(self):
         return str(self)
@@ -192,19 +189,14 @@ def find_right_center_and_radius(gray_image: np.ndarray,
     return circle
 
 
-def clarify_center(gray_image: np.ndarray, circle: Circle, is_circle: float = 0.6,
+def clarify_center(gray_image: np.ndarray,
+                   circle: Circle,
+                   is_circle: float = 0.6,
+                   max_thickness: int = 20,
                    min_radius: int = 5) -> Circle:
-    circle = find_right_center_and_radius(gray_image, circle, is_circle, min_radius)
+    circle = find_right_center_and_radius(gray_image, circle, is_circle, max_thickness, min_radius)
     circle = find_radius_and_line_width(gray_image, circle, is_circle)
     return circle
-
-
-def find_shadow_circles(gray_image: np.ndarray, centers: list, is_circle: float = 0.6) -> list:
-    return list()
-
-
-def find_concetric_circle(gray_image: np.ndarray, centers: list, is_circle: float = 0.6) -> list:
-    return list()
 
 
 def clarify_circles(gray_image: np.ndarray,
@@ -216,7 +208,7 @@ def clarify_circles(gray_image: np.ndarray,
     for center in centers:
         if count_intersections(gray_image, center.x_center, center.y_center, center.radius) \
                 > is_circle * 2 * np.pi * center.radius:
-            center = clarify_center(gray_image, center, is_circle, min_radius)
+            center = clarify_center(gray_image, center, is_circle, max_thickness, min_radius)
             for center_delete in centers:
                 if math.hypot(center.x_center - center_delete.x_center,
                               center.y_center - center_delete.y_center) <= \
@@ -228,6 +220,4 @@ def clarify_circles(gray_image: np.ndarray,
                         2 * center.line_width:
                     circles.remove(center_delete)
             circles.append(center)
-    circles += find_shadow_circles(gray_image, centers, is_circle)
-    circles += find_concetric_circle(gray_image, circles, is_circle)
     return circles
