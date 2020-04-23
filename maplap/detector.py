@@ -100,7 +100,7 @@ def detect_lines_without_width(const_image: np.ndarray,
     if coordinates is not None:
         for coordinate in coordinates:
             x_first, y_first, x_second, y_second = coordinate[0]
-            lines.append(Line(x_first, y_first, x_second, y_second, 1))
+            lines.append(Line(x_first, y_first, x_second, y_second))
     return lines
 
 
@@ -139,8 +139,7 @@ def detect_centers_of_circles(gray_image: np.ndarray,
                 x_center, y_center, radius = map(int, center)
                 circles.append(Circle(x_center, y_center, radius, 1))
         return circles
-    else:
-        return list()
+    return list()
 
 
 def find_radius_and_line_width(gray_image: np.ndarray, circle: Circle, is_circle: float) -> Circle:
