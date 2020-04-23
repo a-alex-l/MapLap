@@ -3,6 +3,7 @@ from pylatex import (Document, TikZ, TikZNode,
                      TikZDraw, TikZCoordinate,
                      TikZUserPath, TikZOptions)
 
+
 def generator_latex_code(list_of_lines_and_circles, filename='result.tex') -> Document:
     doc = Document()
 
