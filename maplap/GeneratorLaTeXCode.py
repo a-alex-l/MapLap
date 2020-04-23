@@ -1,10 +1,11 @@
-from maplap.Detector import *
+from Detector import *
 from pylatex import (Document, TikZ, TikZNode,
                      TikZDraw, TikZCoordinate,
                      TikZUserPath, TikZOptions)
+from gen_im import *
 
 
-def generator_latex_code(list_of_lines_and_circles, filename='result.tex'):
+def generator_latex_code(list_of_lines_and_circles, filename='result.tex') -> Document:
     doc = Document()
 
     with doc.create(TikZ()) as pic:
@@ -21,4 +22,18 @@ def generator_latex_code(list_of_lines_and_circles, filename='result.tex'):
                 pic.append(TikZDraw([first, '--', second],
                                     options=TikZOptions(**node_kwargs)))
 
+    return doc
+
+
+def generator_latex_str(list_of_lines_and_circles) -> str:
+    return generator_latex_code(list_of_lines_and_circles).dumps()
+
+
+def generator_latex_tex(list_of_lines_and_circles, filename):
+    doc = generator_latex_code(list_of_lines_and_circles)
     doc.generate_tex(filename)
+
+
+def generator_latex_pdf(list_of_lines_and_circles, filename):
+    doc = generator_latex_code(list_of_lines_and_circles)
+    doc.generate_pdf(filename)
