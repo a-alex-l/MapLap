@@ -46,7 +46,7 @@ class Circle:
         return f"{self.x_center} {self.y_center} {self.radius} {self.line_width}"
 
 
-def detector(input_image: cv2.UMat,
+def detector(file_path,
              block_size: int = 101,
              level_black: int = 20,
 
@@ -61,6 +61,7 @@ def detector(input_image: cv2.UMat,
              threshold_center: int = 35,
              min_radius: int = 5,
              max_radius: int = 0) -> list:
+    input_image = cv2.imread(file_path)
     gray_image = get_black_white_image(input_image, block_size, level_black)
     canny_image = cv2.Canny(gray_image, 100, 50)
     lines = detect_lines_without_width(canny_image, threshold_line, min_line_length, max_line_gap)
