@@ -1,41 +1,48 @@
 import math
+from typing import List
 import cv2
 import numpy as np
 
 
-class Line:
-    x_first: int = 0
-    y_first: int = 0
-    x_second: int = 0
-    y_second: int = 0
-    line_width: int = 1
+class Point:
+    x: int
+    y: int
 
-    def __init__(self,
-                 x_first: int,
-                 y_first: int,
-                 x_second: int,
-                 y_second: int):
-        self.x_first = x_first
-        self.y_first = y_first
-        self.x_second = x_second
-        self.y_second = y_second
+    def __init__(self, x: int, y: int):
+        self.x = x
+        self.y = y
 
     def __repr__(self):
         return str(self)
 
     def __str__(self):
-        return f"{self.x_first} {self.y_first} {self.x_second} {self.y_second} {self.line_width}"
+        return f"{self.x} {self.y}"
+
+
+class Line:
+    point_first: Point
+    point_second: Point
+    line_width: int
+
+    def __init__(self, point_first: Point, point_second: Point, line_width: int):
+        self.point_first = point_first
+        self.point_second = point_second
+        self.line_width = line_width
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        return f"{self.point_first} {self.point_second} {self.line_width}"
 
 
 class Circle:
-    x_center: int = 0
-    y_center: int = 0
-    radius: int = 0
-    line_width: int = 0
+    center: Point
+    radius: int
+    line_width: int
 
-    def __init__(self, x_center: int, y_center: int, radius: int, line_width: int = 1):
-        self.x_center = x_center
-        self.y_center = y_center
+    def __init__(self, center: Point, radius: int, line_width: int = 1):
+        self.center = center
         self.radius = radius
         self.line_width = line_width
 
@@ -43,181 +50,162 @@ class Circle:
         return str(self)
 
     def __str__(self):
-        return f"{self.x_center} {self.y_center} {self.radius} {self.line_width}"
+        return f"{self.center} {self.radius} {self.line_width}"
+
+    def count_intersections(self, gray_image: np.ndarray, speed_rate: int) -> int:
+        count: int = 0
+        if self.center.x - self.radius < 0 or self.center.x + self.radius >= gray_image.shape[1]\
+           or self.center.y - self.radius < 0 or self.center.y + self.radius >= gray_image.shape[0]:
+            return 0
+        for phi in np.arange(0.0, 2 * np.pi, speed_rate / self.radius):
+            if gray_image[round(self.center.y + self.radius * math.sin(phi))]\
+                         [round(self.center.x + self.radius * math.cos(phi))] != 0:
+                count = count + speed_rate
+        return count
+
+    def find_line_width(self, gray_image: np.ndarray, is_circle: float, speed_rate: int) -> None:
+        min_radius = self.radius
+        while self.count_intersections(gray_image, speed_rate) \
+                > is_circle * 2 * np.pi * self.radius:
+            self.radius = self.radius + 1
+        self.line_width = self.radius - min_radius - 1
+        self.radius = min_radius
+
+    def find_right_center_and_radius(self,
+                                     gray_image: np.ndarray,
+                                     is_circle: float = 0.6,
+                                     max_thickness: int = 20,
+                                     min_radius: int = 5,
+                                     speed_rate: int = 5):
+        count_non_zero_now = self.count_intersections(gray_image, speed_rate)
+        moves = ((1, 0), (0, 1), (-1, 0), (0, -1),
+                 (1, 0), (0, 1), (-1, 0), (0, -1),
+                 (1, 0), (0, 1), (-1, 0), (0, -1))
+        for move in moves:
+            for _ in range(1, max_thickness):
+                self.center.x = self.center.x + move[0]
+                self.center.y = self.center.y + move[1]
+                count_non_zero_move = self.count_intersections(gray_image, speed_rate)
+                if count_non_zero_move > is_circle * 2 * np.pi * self.radius:
+                    count_non_zero_now = count_non_zero_move
+                else:
+                    self.center.x = self.center.x - move[0]
+                    self.center.y = self.center.y - move[1]
+                    break
+                if count_non_zero_now > is_circle * 2 * np.pi * self.radius and \
+                        self.radius > min_radius:
+                    self.radius = self.radius - 1
+                    count_non_zero_new = self.count_intersections(gray_image, speed_rate)
+                    if count_non_zero_new > is_circle * 2 * np.pi * self.radius:
+                        count_non_zero_now = count_non_zero_new
+                    else:
+                        self.radius = self.radius + 1
 
 
-def detector(file_path,
-             block_size: int = 101,
-             level_black: int = 20,
+class Detector:
+    block_size: int
+    level_black: int
 
-             threshold_line: int = 100,
-             min_line_length: int = 5,
-             max_line_gap: int = 5,
+    threshold_line: int
+    min_line_length: int
+    max_line_gap: int
 
-             is_circle: float = 0.6,
-             max_thickness: int = 20,
+    is_circle: float
+    max_thickness: int
+    speed_rate: int
 
-             find_rate: int = 1,
-             threshold_center: int = 35,
-             min_radius: int = 5,
-             max_radius: int = 0) -> list:
-    input_image = cv2.imread(file_path)
-    gray_image = get_black_white_image(input_image, block_size, level_black)
-    canny_image = cv2.Canny(gray_image, 100, 50)
-    lines = detect_lines_without_width(canny_image, threshold_line, min_line_length, max_line_gap)
-    circles_centers = detect_centers_of_circles(gray_image,
-                                                find_rate,
-                                                threshold_center,
-                                                min_radius,
-                                                max_radius)
-    circles = clarify_circles(gray_image, circles_centers, is_circle, max_thickness, min_radius)
-    return lines + circles
+    find_rate: int
+    threshold_center: int
+    min_radius: int
+    max_radius: int
 
+    def __init__(self):
+        self.block_size = 101
+        self.level_black = 20
 
-def get_black_white_image(const_image: cv2.UMat,
-                          block_size: int = 101,
-                          level_black: int = 20) -> np.ndarray:
-    gray_image = cv2.cvtColor(const_image, cv2.COLOR_BGR2GRAY)
-    gray_image = cv2.adaptiveThreshold(gray_image,
-                                       maxValue=255,
-                                       adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                       thresholdType=cv2.THRESH_BINARY_INV,
-                                       blockSize=block_size,  # Parameter!
-                                       C=level_black)  # Parameter!
-    return gray_image
+        self.threshold_line = 100
+        self.min_line_length = 15
+        self.max_line_gap = 10
 
+        self.is_circle = 0.75
+        self.max_thickness = 20
+        self.speed_rate = 5
 
-def detect_lines_without_width(const_image: np.ndarray,
-                               threshold_line: int = 100,
-                               min_line_length: int = 15,
-                               max_line_gap: int = 10) -> list:
-    coordinates: list = cv2.HoughLinesP(const_image,
-                                        rho=1,
-                                        theta=math.pi / 180,
-                                        threshold=threshold_line,  # threshold for line detection
-                                        minLineLength=min_line_length,  # minimal line length
-                                        maxLineGap=max_line_gap)  # max gap between two lines
-    lines = []
-    if coordinates is not None:
-        for coordinate in coordinates:
-            x_first, y_first, x_second, y_second = coordinate[0]
-            lines.append(Line(x_first, y_first, x_second, y_second))
-    return lines
+        self.find_rate = 1
+        self.threshold_center = 20
+        self.min_radius = 5
+        self.max_radius = 0
 
+    def detect(self, file_path: str) -> List[Line] and List[Circle]:
+        input_image = cv2.imread(file_path)
+        gray_image = self.get_black_white_image(input_image)
+        canny_image = cv2.Canny(gray_image, 100, 50)
+        lines = self.detect_lines_without_width(canny_image)
+        circles_centers = self.detect_centers_of_circles(gray_image)
+        circles = self.clarify_circles(gray_image, circles_centers)
+        return lines, circles
 
-def count_intersections(gray_image: np.ndarray,
-                        x_center: int,
-                        y_center: int,
-                        radius: int) -> int:
-    count: int = 0
-    if x_center - radius < 0 or x_center + radius >= gray_image.shape[1]\
-            or y_center - radius < 0 or y_center + radius >= gray_image.shape[0]:
-        return 0
-    for phi in np.arange(0.0, 2 * np.pi, 5 / radius):
-        if gray_image[round(y_center + radius * math.sin(phi))]\
-           [round(x_center + radius * math.cos(phi))] != 0:
-            count = count + 5
-    return count
+    def get_black_white_image(self, const_image: cv2.UMat) -> np.ndarray:
+        gray_image = cv2.cvtColor(const_image, cv2.COLOR_BGR2GRAY)
+        gray_image = cv2.adaptiveThreshold(gray_image,
+                                           maxValue=255,
+                                           adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                           thresholdType=cv2.THRESH_BINARY_INV,
+                                           blockSize=self.block_size,  # Parameter!
+                                           C=self.level_black)  # Parameter!
+        return gray_image
 
+    def detect_lines_without_width(self, const_image: np.ndarray) -> list:
+        coordinates: list = cv2.HoughLinesP(const_image,
+                                            rho=1,
+                                            theta=math.pi / 180,
+                                            threshold=self.threshold_line,
+                                            minLineLength=self.min_line_length,
+                                            maxLineGap=self.max_line_gap)
+        lines = []
+        if coordinates is not None:
+            for coordinate in coordinates:
+                x_first, y_first, x_second, y_second = coordinate[0]
+                lines.append(Line(Point(x_first, y_first), Point(x_second, y_second), 1))
+        return lines
 
-def detect_centers_of_circles(gray_image: np.ndarray,
-                              find_rate: int = 1,
-                              threshold_center: int = 20,
-                              min_radius: int = 0,
-                              max_radius: int = 0) -> list:
-    centers: list = cv2.HoughCircles(gray_image,
-                                     cv2.HOUGH_GRADIENT,
-                                     find_rate,
-                                     minDist=0.0001,
-                                     param1=50,  # threshold for Canny edge detector
-                                     param2=threshold_center,  # threshold for center detection
-                                     minRadius=min_radius,
-                                     maxRadius=max_radius)
-    if centers is not None:
-        circles: list = []
+    def detect_centers_of_circles(self, gray_image: np.ndarray) -> List[Circle]:
+        centers: list = cv2.HoughCircles(gray_image,
+                                         cv2.HOUGH_GRADIENT,
+                                         self.find_rate,
+                                         minDist=0.0001,
+                                         param1=50,
+                                         param2=self.threshold_center,
+                                         minRadius=self.min_radius,
+                                         maxRadius=self.max_radius)
         if centers is not None:
-            for center in centers[0, :]:
-                x_center, y_center, radius = map(int, center)
-                circles.append(Circle(x_center, y_center, radius, 1))
+            circles: list = []
+            if centers is not None:
+                for center in centers[0, :]:
+                    x_center, y_center, radius = map(int, center)
+                    circles.append(Circle(Point(x_center, y_center), radius, 1))
+            return circles
+        return []
+
+    def clarify_circles(self,
+                        gray_image: np.ndarray,
+                        centers: List[Circle]) -> List[Circle]:
+        circles: list = []
+        for center in centers:
+            if center.count_intersections(gray_image, self.speed_rate) \
+                    > self.is_circle * 2 * np.pi * center.radius:
+                center.find_right_center_and_radius(gray_image, self.is_circle, self.max_thickness,
+                                                    self.min_radius, self.speed_rate)
+                center.find_line_width(gray_image, self.is_circle, self.speed_rate)
+                for center_delete in centers:
+                    if math.hypot(center.center.x - center_delete.center.x,
+                                  center.center.y - center_delete.center.y) <= \
+                            2 * center.line_width:
+                        centers.remove(center_delete)
+                for center_delete in circles:
+                    if math.hypot(center.center.x - center_delete.center.x,
+                                  center.center.y - center_delete.center.y) <= \
+                            2 * center.line_width:
+                        circles.remove(center_delete)
+                circles.append(center)
         return circles
-    return list()
-
-
-def find_radius_and_line_width(gray_image: np.ndarray, circle: Circle, is_circle: float) -> Circle:
-    circle.line_width = 1
-    while count_intersections(gray_image,
-                              circle.x_center,
-                              circle.y_center,
-                              circle.radius + circle.line_width) \
-            > is_circle * 2 * np.pi * (circle.radius + circle.line_width):
-        circle.line_width = circle.line_width + 1
-    circle.line_width = circle.line_width - 1
-    return circle
-
-
-def find_right_center_and_radius(gray_image: np.ndarray,
-                                 circle: Circle,
-                                 is_circle: float = 0.6,
-                                 max_thickness: int = 20,
-                                 min_radius: int = 5) -> Circle:
-    count_non_zero_now = \
-        count_intersections(gray_image, circle.x_center, circle.y_center, circle.radius)
-    moves = ((1, 0), (0, 1), (-1, 0), (0, -1),
-             (1, 0), (0, 1), (-1, 0), (0, -1),
-             (1, 0), (0, 1), (-1, 0), (0, -1))
-    for move in moves:
-        for _ in range(1, max_thickness):
-            count_non_zero_move = count_intersections(gray_image,
-                                                      circle.x_center + move[0],
-                                                      circle.y_center + move[1],
-                                                      circle.radius)
-            if count_non_zero_move > is_circle * 2 * np.pi * circle.radius:
-                circle.x_center = circle.x_center + move[0]
-                circle.y_center = circle.y_center + move[1]
-                count_non_zero_now = count_non_zero_move
-            else:
-                break
-            if count_non_zero_now > is_circle * 2 * np.pi * circle.radius and\
-               circle.radius > min_radius:
-                count_non_zero_new = count_intersections(gray_image,
-                                                         circle.x_center,
-                                                         circle.y_center,
-                                                         circle.radius - 1)
-                if count_non_zero_new > is_circle * 2 * np.pi * (circle.radius - 1):
-                    circle.radius = circle.radius - 1
-                    count_non_zero_now = count_non_zero_new
-    return circle
-
-
-def clarify_center(gray_image: np.ndarray,
-                   circle: Circle,
-                   is_circle: float = 0.6,
-                   max_thickness: int = 20,
-                   min_radius: int = 5) -> Circle:
-    circle = find_right_center_and_radius(gray_image, circle, is_circle, max_thickness, min_radius)
-    circle = find_radius_and_line_width(gray_image, circle, is_circle)
-    return circle
-
-
-def clarify_circles(gray_image: np.ndarray,
-                    centers: list,
-                    is_circle: float = 0.6,
-                    max_thickness: int = 20,
-                    min_radius: int = 5) -> list:
-    circles: list = []
-    for center in centers:
-        if count_intersections(gray_image, center.x_center, center.y_center, center.radius) \
-                > is_circle * 2 * np.pi * center.radius:
-            center = clarify_center(gray_image, center, is_circle, max_thickness, min_radius)
-            for center_delete in centers:
-                if math.hypot(center.x_center - center_delete.x_center,
-                              center.y_center - center_delete.y_center) <= \
-                        2 * center.line_width:
-                    centers.remove(center_delete)
-            for center_delete in circles:
-                if math.hypot(center.x_center - center_delete.x_center,
-                              center.y_center - center_delete.y_center) <= \
-                        2 * center.line_width:
-                    circles.remove(center_delete)
-            circles.append(center)
-    return circles
