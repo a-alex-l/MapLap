@@ -11,12 +11,12 @@ class Contrast:
     block_size: int
     level_black: int
 
-    def __init__(self, sittings):
-        self.block_size = getattr(sittings, "block_size", 101)
-        self.level_black = getattr(sittings, "level_black", 20)
+    def __init__(self, settings):
+        self.block_size = getattr(settings, "block_size", 101)
+        self.level_black = getattr(settings, "level_black", 20)
 
-    def update_sittings(self, sittings):
-        self.__init__(sittings)
+    def update_settings(self, settings):
+        self.__init__(settings)
 
     def get_black_white_image(self, const_image: cv2.UMat) -> np.ndarray:
         gray_image = cv2.cvtColor(const_image, cv2.COLOR_BGR2GRAY)
@@ -37,14 +37,14 @@ class LineDetector:
     max_line_gap: int
     speed_rate: int
 
-    def __init__(self, sittings):
-        self.threshold_line = getattr(sittings, "threshold_line", 100)
-        self.min_line_length = getattr(sittings, "min_line_length", 15)
-        self.max_line_gap = getattr(sittings, "max_line_gap", 10)
-        self.speed_rate = getattr(sittings, "speed_rate", 1)
+    def __init__(self, settings):
+        self.threshold_line = getattr(settings, "threshold_line", 100)
+        self.min_line_length = getattr(settings, "min_line_length", 15)
+        self.max_line_gap = getattr(settings, "max_line_gap", 10)
+        self.speed_rate = getattr(settings, "speed_rate", 1)
 
-    def update_sittings(self, sittings):
-        self.__init__(sittings)
+    def update_settings(self, settings):
+        self.__init__(settings)
 
     def detect_lines_without_width(self, const_image: np.ndarray) -> list:
         coordinates: list = cv2.HoughLinesP(
@@ -74,16 +74,16 @@ class CircleDetector:
     min_radius: int
     max_radius: int
 
-    def __init__(self, sittings):
-        self.is_circle = getattr(sittings, "is_circle", 0.75)
-        self.max_thickness = getattr(sittings, "max_thickness", 20)
-        self.speed_rate = getattr(sittings, "speed_rate", 1)
-        self.threshold_center = getattr(sittings, "threshold_center", 20)
-        self.min_radius = getattr(sittings, "min_radius", 5)
-        self.max_radius = getattr(sittings, "max_radius", 0)
+    def __init__(self, settings):
+        self.is_circle = getattr(settings, "is_circle", 0.75)
+        self.max_thickness = getattr(settings, "max_thickness", 20)
+        self.speed_rate = getattr(settings, "speed_rate", 1)
+        self.threshold_center = getattr(settings, "threshold_center", 20)
+        self.min_radius = getattr(settings, "min_radius", 5)
+        self.max_radius = getattr(settings, "max_radius", 0)
 
-    def update_sittings(self, sittings):
-        self.__init__(sittings)
+    def update_settings(self, settings):
+        self.__init__(settings)
 
     def _find_right_center_and_radius(self, gray_image: np.ndarray, circle: Circle):
         count_non_zero_now = circle.count_intersections(gray_image, self.speed_rate)
@@ -186,15 +186,15 @@ class Detector:
     detector_lines: LineDetector
     detector_circles: CircleDetector
 
-    def update_sittings(self, sittings):
-        self.contrast.update_sittings(sittings)
-        self.detector_lines.update_sittings(sittings)
-        self.detector_circles.update_sittings(sittings)
+    def update_settings(self, settings):
+        self.contrast.update_settings(settings)
+        self.detector_lines.update_settings(settings)
+        self.detector_circles.update_settings(settings)
 
-    def __init__(self, sittings):
-        self.contrast = Contrast(sittings)
-        self.detector_lines = LineDetector(sittings)
-        self.detector_circles = CircleDetector(sittings)
+    def __init__(self, settings):
+        self.contrast = Contrast(settings)
+        self.detector_lines = LineDetector(settings)
+        self.detector_circles = CircleDetector(settings)
 
     def detect(self, file_path: str) -> List[Line] and List[Circle]:
         input_image = cv2.imread(file_path)
