@@ -197,6 +197,21 @@ class Detector:
         self.detector_lines = LineDetector(settings)
         self.detector_circles = CircleDetector(settings)
 
+    def _show_finds(self, file_path: str, lines: list, circles: list):
+        input_image = cv2.imread(file_path)
+        image = 255 * np.ones(input_image.shape, input_image.dtype)
+        if lines:
+            for line in lines:
+                cv2.line(image, (line.point_first.x_coord, line.point_first.y_coord),
+                         (line.point_second.x_coord, line.point_second.y_coord),
+                         (0, 0, 0), line.line_width)
+        if circles:
+            for circle in circles:
+                cv2.circle(image, (circle.center.x_coord, circle.center.y_coord),
+                           circle.radius + circle.line_width // 2,
+                           (0, 0, 0), circle.line_width)
+        cv2.imwrite(file_path, image)
+
     def detect(self, file_path: str) -> List[Line] and List[Circle]:
         input_image = cv2.imread(file_path)
         gray_image = self.contrast.get_black_white_image(input_image)
@@ -204,4 +219,5 @@ class Detector:
         lines = self.detector_lines.detect_lines_without_width(canny_image)
         circles_centers = self.detector_circles.detect_centers_of_circles(gray_image)
         circles = self.detector_circles.clarify_circles(gray_image, circles_centers)
+        self._show_finds(file_path, lines, circles)
         return lines, circles

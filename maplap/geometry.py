@@ -61,8 +61,8 @@ class Circle:
     def __gt__(self, other):
         return self.center < other.center
 
-    def count_intersections(self, gray_image: np.ndarray, speed_rate: float) -> int:
-        count: int = 0
+    def count_intersections(self, gray_image: np.ndarray, speed_rate: float) -> float:
+        count: float = 0
         if (
             self.center.x_coord - self.radius < 0
             or self.center.x_coord + self.radius >= gray_image.shape[1]
