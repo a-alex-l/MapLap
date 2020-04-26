@@ -5,7 +5,8 @@ class Line:
     y_second: int = 0
     line_width: float = 0
 
-    def __init__(self, x_first: int, y_first: int, x_second: int, y_second: int, line_width: int = 1):
+    def __init__(self, x_first: int, y_first: int, x_second: 
+                 int, y_second: int, line_width: int = 1):
         self.x_first = x_first
         self.y_first = y_first
         self.x_second = x_second
