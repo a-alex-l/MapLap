@@ -1,6 +1,6 @@
 import random
 
-from detector import Circle, Line, Point
+from geometry import Circle, Line, Point
 
 
 def generator_images(random_seed, circles, lines, max_thickness, size) -> list:

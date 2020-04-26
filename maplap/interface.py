@@ -1,28 +1,11 @@
 """interface"""
 import sys
 
+import constant as C
 from PyQt5 import Qt, QtCore, QtGui, QtWidgets
 
-import constant as C
 from design import UiMapLap
-
-
-class Rectangle:
-    """Rectangle struct"""
-
-    def __init__(self, x1=C.ZERO, y1=C.ZERO, x2=C.ZERO, y2=C.ZERO):
-        self.x_start = x1
-        self.y_start = y1
-        self.x_end = x2
-        self.y_end = y2
-
-    def none_for_pylint(self):
-        """do nothing"""
-        self.none_for_pylint()
-
-    def also_none_for_pylint(self):
-        """also do nothing"""
-        self.also_none_for_pylint()
+from geometry import Rectangle
 
 
 class SettingsParams:
@@ -36,14 +19,6 @@ class SettingsParams:
         assert len(params) == C.PARAMS_IN_SETTING
         for i in range(C.PARAMS_IN_SETTING):
             setattr(self, C.SETTINGS_PARAM_ATR[i], params[i])
-
-    def none_for_pylint(self):
-        """do nothing"""
-        self.none_for_pylint()
-
-    def also_none_for_pylint(self):
-        """also do nothing"""
-        self.also_none_for_pylint()
 
 
 class Settings:
@@ -127,7 +102,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         # print(self.desktop().screenGeometry().width())
 
         self.settings = Settings()
-        self.angle = [C.ZERO, C.ZERO]
+        self.angle = [0, 0]
         self.picture = self.picture_res = C.START_PICTURE
         self.picture_factor = C.INIT_FACTOR
         self.action = "no"
@@ -171,10 +146,10 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         """saves the image to the desired file"""
         if is_picture_in:
             self.picture_in.pixmap().save(C.TEMP, file_format)
-            self.angle[0] = C.ZERO
+            self.angle[0] = 0
         else:
             self.picture_in.pixmap().save(C.RES, file_format)
-            self.angle[1] = C.ZERO
+            self.angle[1] = 0
 
     def resize_window(self):
         """normalizes the window size when changing it"""
@@ -182,7 +157,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         pixmap_res = QtGui.QPixmap(self.picture_res)
         pixmap = pixmap.transformed(QtGui.QTransform().rotate(self.angle[0]))
         pixmap_res = pixmap_res.transformed(QtGui.QTransform().rotate(self.angle[1]))
-        width_some = C.DOUBLE * C.SIZE_LINE + C.SIZE_PANEL
+        width_some = 2 * C.SIZE_LINE + C.SIZE_PANEL
         width_pixmap_res = pixmap_res.width() * pixmap.height() / pixmap_res.height()
         new_width = pixmap.width() + width_pixmap_res  #
         self.setMinimumSize(
@@ -257,7 +232,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         dialog.setNameFilter(C.TEMPLATE_FILE)
         if dialog.exec_():
             self.picture = "".join(dialog.selectedFiles())
-            self.angle[0] = C.ZERO
+            self.angle[0] = 0
             self.picture_factor = C.INIT_FACTOR
             self.init_picture()
 
@@ -265,7 +240,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         """rotates images"""
         pixmap = QtGui.QPixmap(self.picture)
         pixmap = pixmap.transformed(QtGui.QTransform().rotate(self.angle[0]))
-        self.picture_factor = (self.picture_in.height() + C.DOUBLE * C.BORDER) / pixmap.height()
+        self.picture_factor = (self.picture_in.height() + 2 * C.BORDER) / pixmap.height()
         self.angle[0] = (self.angle[0] + C.ROTATE) % C.FULL_ROTATE
         self.angle[1] = (self.angle[1] + C.ROTATE) % C.FULL_ROTATE
         self.resize_window()
@@ -276,8 +251,8 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             self.area.x_start, self.area.x_end = self.area.x_end, self.area.x_start
         if self.area.y_start > self.area.y_end:
             self.area.y_start, self.area.y_end = self.area.y_end, self.area.y_start
-        self.area.x_start = max(self.area.x_start, C.ZERO)
-        self.area.y_start = max(self.area.y_start, C.ZERO)
+        self.area.x_start = max(self.area.x_start, 0)
+        self.area.y_start = max(self.area.y_start, 0)
         self.area.x_end = min(self.area.x_end, self.picture_in.width())
         self.area.y_end = min(self.area.y_end, self.picture_in.height() + C.CURSOR)
 
