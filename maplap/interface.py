@@ -7,6 +7,7 @@ import constant as C
 from design import UiMapLap
 from settings import Settings, SettingsParams
 from geometry import Rectangle
+import detector
 
 class MainWindow(QtWidgets.QMainWindow, UiMapLap):
     """Main window"""
@@ -39,8 +40,8 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.rotate.clicked.connect(self.__rotate)
         self.pencil.clicked.connect(self.__pencil)
         self.eraser.clicked.connect(self.__eraser)
-        self.spin_block_size.valueChanged.connect(self.__settings_block_size)
-        self.slider_block_size.valueChanged.connect(self.__settings_block_size)
+        self.spin_block_size.valueChanged.connect(self.__settings_block_size_spin)
+        self.slider_block_size.valueChanged.connect(self.__settings_block_size_slider)
         self.spin_max_thick.valueChanged.connect(self.__settings_max_thick)
         self.slider_max_thick.valueChanged.connect(self.__settings_max_thick)
         self.spin_min_line_len.valueChanged.connect(self.__settings_min_line_len)
@@ -79,11 +80,18 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
 
     def __cropping(self):
         """run the algorithm and display the picture"""
+        self.fix_param()
         self.settings.save_settings()
         self.picture_res = C.RES
+        detect = detector.Detector(self.settings)
+        lines, circles = detect.detect(self.picture_res)
+        self.display_cropping(lines, circles)
         self.save_image(C.PICTURE_OUT)
         self.update_image()
         ##
+
+    def display_cropping(self, lines, circles):
+        pass
 
     def init_picture(self):
         """initial installation of the picture"""
@@ -360,10 +368,18 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             return Qt.QPen(QtCore.Qt.black, C.BLACK_W)
         return Qt.QPen(QtCore.Qt.white, C.WHITE_W)
 
-    def __settings_block_size(self, new_num):
+    def __settings_block_size_slider(self, new_num):
         """change block size everywhere"""
-        self.slider_block_size.setProperty("value", new_num)
-        self.spin_block_size.setProperty("value", new_num)
+        self.spin_block_size.setProperty("value", new_num * C.DOUBLE + C.BS_START)
+        setattr(
+            getattr(self.settings, C.SETTINGS_ATR[C.BLOCK_SIZE]),
+            C.SETTINGS_PARAM_ATR[C.VALUE],
+            new_num * C.DOUBLE + C.BS_START,
+        )
+
+    def __settings_block_size_spin(self, new_num):
+        """change block size everywhere"""
+        self.slider_block_size.setProperty("value", (new_num - C.BS_START) / C.DOUBLE)
         setattr(
             getattr(self.settings, C.SETTINGS_ATR[C.BLOCK_SIZE]),
             C.SETTINGS_PARAM_ATR[C.VALUE],
@@ -424,6 +440,19 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         atr_range = getattr(param, C.SETTINGS_PARAM_ATR[C.RANGE])
         return atr_descr, atr_range
 
+    def fix_param(self):
+        param = getattr(self.settings, C.SETTINGS_ATR[C.BLOCK_SIZE])
+        atr_value = int(getattr(param, C.SETTINGS_PARAM_ATR[C.VALUE]))
+        if atr_value % C.DOUBLE == C.ZERO:
+            atr_value+=1
+            self.slider_block_size.setProperty("value", (atr_value - C.BS_START) / C.DOUBLE)
+            self.spin_block_size.setProperty("value", atr_value)
+            setattr(
+                getattr(self.settings, C.SETTINGS_ATR[C.BLOCK_SIZE]),
+                C.SETTINGS_PARAM_ATR[C.VALUE],
+                atr_value,
+            )
+
     def set_settings(self):
         """set init settings"""
         self.slider_block_size.setProperty(
@@ -435,10 +464,10 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         )
         self.spin_block_size.setProperty(
             "value",
-            getattr(
+            (getattr(
                 getattr(self.settings, C.SETTINGS_ATR[C.BLOCK_SIZE]),
                 C.SETTINGS_PARAM_ATR[C.VALUE],
-            ),
+            ) - C.BS_START) / C.DOUBLE,
         )
         self.slider_max_thick.setProperty(
             "value",
