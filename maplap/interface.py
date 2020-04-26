@@ -32,7 +32,7 @@ class SettingsParams:
     # I know that better - ok
 
     def __init__(self, line_param):
-        params = [elem for elem in list(line_param.split(","))]
+        params = list(line_param.split(","))
         assert len(params) == C.PARAMS_IN_SETTING
         for i in range(C.PARAMS_IN_SETTING):
             setattr(self, C.SETTINGS_PARAM_ATR[i], params[i])
