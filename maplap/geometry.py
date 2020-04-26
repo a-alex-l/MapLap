@@ -18,9 +18,11 @@ class Point:
         return f"{self.x_coord} {self.y_coord}"
 
     def __gt__(self, other):
-        return self.x_coord < other.x_coord or \
-               self.x_coord == other.x_coord and \
-               self.y_coord < other.y_coord
+        return (
+            self.x_coord < other.x_coord
+            or self.x_coord == other.x_coord
+            and self.y_coord < other.y_coord
+        )
 
 
 class Line:
@@ -61,10 +63,12 @@ class Circle:
 
     def count_intersections(self, gray_image: np.ndarray, speed_rate: int) -> int:
         count: int = 0
-        if self.center.x_coord - self.radius < 0 \
-                or self.center.x_coord + self.radius >= gray_image.shape[1] \
-                or self.center.y_coord - self.radius < 0 \
-                or self.center.y_coord + self.radius >= gray_image.shape[0]:
+        if (
+            self.center.x_coord - self.radius < 0
+            or self.center.x_coord + self.radius >= gray_image.shape[1]
+            or self.center.y_coord - self.radius < 0
+            or self.center.y_coord + self.radius >= gray_image.shape[0]
+        ):
             return 0
         for phi in np.arange(0.0, 2 * np.pi, speed_rate / self.radius):
             x_coord = round(self.center.y_coord + self.radius * math.sin(phi))
@@ -73,10 +77,14 @@ class Circle:
                 count = count + speed_rate
         return count
 
-    def find_line_width(self, gray_image: np.ndarray, is_circle: float, speed_rate: int) -> None:
+    def find_line_width(
+        self, gray_image: np.ndarray, is_circle: float, speed_rate: int
+    ) -> None:
         min_radius = self.radius
-        while self.count_intersections(gray_image, speed_rate) \
-                > is_circle * 2 * np.pi * self.radius:
+        while (
+            self.count_intersections(gray_image, speed_rate)
+            > is_circle * 2 * np.pi * self.radius
+        ):
             self.radius = self.radius + 1
         self.line_width = self.radius - min_radius - 1
         self.radius = min_radius
