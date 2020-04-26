@@ -75,15 +75,12 @@ class Settings:
 
     def save_settings(self):
         """save settings to file"""
-        file_settings = open(C.SETTINGS, "w")
-        for i in range(C.SETTINGS_PARAMS):
-            file_settings.write(
-                "{} {}\n".format(
-                    getattr(getattr(self, C.SETTINGS_ATR[i]), C.SETTINGS_PARAM_ATR[0]),
-                    getattr(getattr(self, C.SETTINGS_ATR[i]), C.SETTINGS_PARAM_ATR[1]),
-                )
-            )
-        file_settings.close()
+        with open(C.SETTINGS, "w") as file_settings:
+            for i in range(C.SETTINGS_PARAMS):
+                param = getattr(self, C.SETTINGS_ATR[i])
+                attr1 = getattr(param, C.SETTINGS_PARAM_ATR[0])
+                attr2 = getattr(param, C.SETTINGS_PARAM_ATR[1])
+                print(f"{attr1} {attr2}", file=file_settings)
 
 
 class MainWindow(QtWidgets.QMainWindow, UiMapLap):
