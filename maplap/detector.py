@@ -67,7 +67,7 @@ class Circle:
                 or self.center.second + self.radius >= gray_image.shape[0]:
             return 0
         for phi in np.arange(0.0, 2 * np.pi, speed_rate / self.radius):
-            if gray_image[round(self.center.second + self.radius * math.sin(phi))]\
+            if gray_image[round(self.center.second + self.radius * math.sin(phi))] \
                     [round(self.center.first + self.radius * math.cos(phi))] != 0:
                 count = count + speed_rate
         return count
@@ -111,46 +111,13 @@ class Circle:
                         self.radius = self.radius + 1
 
 
-class Detector:
+class Contrast:
     block_size: int
     level_black: int
 
-    threshold_line: int
-    min_line_length: int
-    max_line_gap: int
-
-    is_circle: float
-    max_thickness: int
-    speed_rate: int
-
-    threshold_center: int
-    min_radius: int
-    max_radius: int
-
-    def __init__(self, file_sittings: str):
-        self.block_size = 101
-        self.level_black = 20
-
-        self.threshold_line = 100
-        self.min_line_length = 15
-        self.max_line_gap = 10
-
-        self.is_circle = 0.75
-        self.max_thickness = 20
-        self.speed_rate = 1
-
-        self.threshold_center = 20
-        self.min_radius = 5
-        self.max_radius = 0
-
-    def detect(self, file_path: str) -> List[Line] and List[Circle]:
-        input_image = cv2.imread(file_path)
-        gray_image = self.get_black_white_image(input_image)
-        canny_image = cv2.Canny(gray_image, 100, 50)
-        lines = self.detect_lines_without_width(canny_image)
-        circles_centers = self.detect_centers_of_circles(gray_image)
-        circles = self.clarify_circles(gray_image, circles_centers)
-        return lines, circles
+    def __init__(self, block_size: int = 101, level_black: int = 20):
+        self.block_size = block_size
+        self.level_black = level_black
 
     def get_black_white_image(self, const_image: cv2.UMat) -> np.ndarray:
         gray_image = cv2.cvtColor(const_image, cv2.COLOR_BGR2GRAY)
@@ -161,6 +128,20 @@ class Detector:
                                            blockSize=self.block_size,  # Parameter!
                                            C=self.level_black)  # Parameter!
         return gray_image
+
+
+class LineDetector:
+    threshold_line: int
+    min_line_length: int
+    max_line_gap: int
+    speed_rate: int
+
+    def __init__(self, threshold_line: int = 100, min_line_length: int = 15,
+                 max_line_gap: int = 10, speed_rate:int = 1):
+        self.threshold_line = threshold_line
+        self.min_line_length = min_line_length
+        self.max_line_gap = max_line_gap
+        self. speed_rate = speed_rate
 
     def detect_lines_without_width(self, const_image: np.ndarray) -> list:
         coordinates: list = cv2.HoughLinesP(const_image,
@@ -175,6 +156,25 @@ class Detector:
                 x_first, y_first, x_second, y_second = coordinate[0]
                 lines.append(Line(Point(x_first, y_first), Point(x_second, y_second), 1))
         return lines
+
+
+class CircleDetector:
+    is_circle: float
+    max_thickness: int
+    speed_rate: int
+
+    threshold_center: int
+    min_radius: int
+    max_radius: int
+
+    def __init__(self):
+        self.is_circle = 0.75
+        self.max_thickness = 20
+        self.speed_rate = 1
+
+        self.threshold_center = 20
+        self.min_radius = 5
+        self.max_radius = 0
 
     def detect_centers_of_circles(self, gray_image: np.ndarray) -> List[Circle]:
         centers: list = cv2.HoughCircles(gray_image,
@@ -217,3 +217,23 @@ class Detector:
                         circles.remove(center_delete)
                 circles.append(center)
         return circles
+
+
+class Detector:
+    contrast: Contrast
+    detector_lines: LineDetector
+    detector_circles: CircleDetector
+
+    def __init__(self):
+        self.contrast = Contrast()
+        self.detector_lines = LineDetector()
+        self.detector_circles = CircleDetector()
+
+    def detect(self, file_path: str) -> List[Line] and List[Circle]:
+        input_image = cv2.imread(file_path)
+        gray_image = self.contrast.get_black_white_image(input_image)
+        canny_image = cv2.Canny(gray_image, 100, 50)
+        lines = self.detector_lines.detect_lines_without_width(canny_image)
+        circles_centers = self.detector_circles.detect_centers_of_circles(gray_image)
+        circles = self.detector_circles.clarify_circles(gray_image, circles_centers)
+        return lines, circles
