@@ -46,4 +46,5 @@ class Circle:
     def __str__(self):
         return f"{self.center} {self.radius} {self.line_width}"
 
+
 # from detector branch
