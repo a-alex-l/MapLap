@@ -80,36 +80,6 @@ class Circle:
         self.line_width = self.radius - min_radius - 1
         self.radius = min_radius
 
-    def find_right_center_and_radius(self,
-                                     gray_image: np.ndarray,
-                                     is_circle: float = 0.6,
-                                     max_thickness: int = 20,
-                                     min_radius: int = 5,
-                                     speed_rate: int = 5):
-        count_non_zero_now = self.count_intersections(gray_image, speed_rate)
-        moves = ((1, 1), (-1, 1), (-1, -1), (1, -1),
-                 (1, 0), (0, 1), (-1, 0), (0, -1),
-                 (1, 0), (0, 1), (-1, 0), (0, -1))
-        for move in moves:
-            for _ in range(0, max_thickness):
-                self.center.first = self.center.first + move[0]
-                self.center.second = self.center.second + move[1]
-                count_non_zero_move = self.count_intersections(gray_image, speed_rate)
-                if count_non_zero_move > is_circle * 2 * np.pi * self.radius:
-                    count_non_zero_now = count_non_zero_move
-                else:
-                    self.center.first = self.center.first - move[0]
-                    self.center.second = self.center.second - move[1]
-                    break
-                if count_non_zero_now > is_circle * 2 * np.pi * self.radius and \
-                        self.radius > min_radius:
-                    self.radius = self.radius - 1
-                    count_non_zero_new = self.count_intersections(gray_image, speed_rate)
-                    if count_non_zero_new > is_circle * 2 * np.pi * self.radius:
-                        count_non_zero_now = count_non_zero_new
-                    else:
-                        self.radius = self.radius + 1
-
 
 class Contrast:
     block_size: int
@@ -137,7 +107,7 @@ class LineDetector:
     speed_rate: int
 
     def __init__(self, threshold_line: int = 100, min_line_length: int = 15,
-                 max_line_gap: int = 10, speed_rate:int = 1):
+                 max_line_gap: int = 10, speed_rate: int = 1):
         self.threshold_line = threshold_line
         self.min_line_length = min_line_length
         self.max_line_gap = max_line_gap
@@ -176,6 +146,31 @@ class CircleDetector:
         self.min_radius = 5
         self.max_radius = 0
 
+    def find_right_center_and_radius(self, gray_image: np.ndarray, circle: Circle):
+        count_non_zero_now = circle.count_intersections(gray_image, self.speed_rate)
+        moves = ((1, 1), (-1, 1), (-1, -1), (1, -1),
+                 (1, 0), (0, 1), (-1, 0), (0, -1),
+                 (1, 0), (0, 1), (-1, 0), (0, -1))
+        for move in moves:
+            for _ in range(0, self.max_thickness):
+                circle.center.first = circle.center.first + move[0]
+                circle.center.second = circle.center.second + move[1]
+                count_non_zero_move = circle.count_intersections(gray_image, self.speed_rate)
+                if count_non_zero_move > self.is_circle * 2 * np.pi * circle.radius:
+                    count_non_zero_now = count_non_zero_move
+                else:
+                    circle.center.first = circle.center.first - move[0]
+                    circle.center.second = circle.center.second - move[1]
+                    break
+                if count_non_zero_now > self.is_circle * 2 * np.pi * circle.radius and \
+                        circle.radius > self.min_radius:
+                    circle.radius = circle.radius - 1
+                    count_non_zero_new = circle.count_intersections(gray_image, self.speed_rate)
+                    if count_non_zero_new > self.is_circle * 2 * np.pi * circle.radius:
+                        count_non_zero_now = count_non_zero_new
+                    else:
+                        circle.radius = circle.radius + 1
+
     def detect_centers_of_circles(self, gray_image: np.ndarray) -> List[Circle]:
         centers: list = cv2.HoughCircles(gray_image,
                                          cv2.HOUGH_GRADIENT,
@@ -202,8 +197,7 @@ class CircleDetector:
         for center in centers:
             if center.count_intersections(gray_image, self.speed_rate) \
                     > self.is_circle * 2 * np.pi * center.radius:
-                center.find_right_center_and_radius(gray_image, self.is_circle, self.max_thickness,
-                                                    self.min_radius, self.speed_rate)
+                self.find_right_center_and_radius(gray_image, center)
                 center.find_line_width(gray_image, self.is_circle, self.speed_rate)
                 for center_delete in centers:
                     if math.hypot(center.center.first - center_delete.center.first,
