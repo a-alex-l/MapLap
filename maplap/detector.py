@@ -13,8 +13,8 @@ class Contrast:
     level_black: int
 
     def __init__(self, settings: SettingsParams):
-        self.block_size = getattr(settings, "block_size", 101)
-        self.level_black = getattr(settings, "level_black", 20)
+        self.block_size = int(getattr(getattr(settings, "block_size"), "value", 101))
+        self.level_black = int(getattr(getattr(settings, "level_black"), "value", 20))
 
     def update_settings(self, settings: SettingsParams):
         self.__init__(settings)
@@ -26,9 +26,9 @@ class Contrast:
             maxValue=255,
             adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
             thresholdType=cv2.THRESH_BINARY_INV,
-            blockSize=self.block_size,  # Parameter!
+            blockSize=self.block_size,
             C=self.level_black,
-        )  # Parameter!
+        )
         return gray_image
 
 
@@ -36,13 +36,13 @@ class LineDetector:
     threshold_line: int
     min_line_length: int
     max_line_gap: int
-    speed_rate: int
+    speed_rate: float
 
     def __init__(self, settings: SettingsParams):
-        self.threshold_line = getattr(settings, "threshold_line", 100)
-        self.min_line_length = getattr(settings, "min_line_length", 15)
-        self.max_line_gap = getattr(settings, "max_line_gap", 10)
-        self.speed_rate = getattr(settings, "speed_rate", 1)
+        self.threshold_line = int(getattr(getattr(settings, "threshold_line"), "value", 100))
+        self.min_line_length = int(getattr(getattr(settings, "min_line_length"), "value", 15))
+        self.max_line_gap = int(getattr(getattr(settings, "max_line_gap"), "value", 10))
+        self.speed_rate = float(getattr(getattr(settings, "speed_rate"), "value", 1))
 
     def update_settings(self, settings: SettingsParams):
         self.__init__(settings)
@@ -69,19 +69,19 @@ class LineDetector:
 class CircleDetector:
     is_circle: float
     max_thickness: int
-    speed_rate: int
+    speed_rate: float
 
     threshold_center: int
     min_radius: int
     max_radius: int
 
     def __init__(self, settings: SettingsParams):
-        self.is_circle = getattr(settings, "is_circle", 0.75)
-        self.max_thickness = getattr(settings, "max_thickness", 20)
-        self.speed_rate = getattr(settings, "speed_rate", 1)
-        self.threshold_center = getattr(settings, "threshold_center", 20)
-        self.min_radius = getattr(settings, "min_radius", 5)
-        self.max_radius = getattr(settings, "max_radius", 0)
+        self.is_circle = float(getattr(getattr(settings, "is_circle"), "value", 0.75))
+        self.max_thickness = int(getattr(getattr(settings, "max_thickness"), "value", 20))
+        self.speed_rate = float(getattr(getattr(settings, "speed_rate"), "value", 1))
+        self.threshold_center = int(getattr(getattr(settings, "threshold_center"), "value", 20))
+        self.min_radius = int(getattr(getattr(settings, "min_radius"), "value", 5))
+        self.max_radius = int(getattr(getattr(settings, "max_radius"), "value", 0))
 
     def update_settings(self, settings: SettingsParams):
         self.__init__(settings)
