@@ -1,25 +1,23 @@
-from Detector import *
-from pylatex import (Document, TikZ, TikZNode,
-                     TikZDraw, TikZCoordinate,
-                     TikZUserPath, TikZOptions)
+from pylatex import Document, TikZ, TikZCoordinate, TikZDraw, TikZOptions
+
+from detector import Circle, Line
 
 
-def generator_latex_code(list_of_lines_and_circles, filename='result.tex') -> Document:
+# TikZNode, TikZUserPath
+def generator_latex_code(list_of_lines_and_circles) -> Document:
     doc = Document()
 
     with doc.create(TikZ()) as pic:
         for i in list_of_lines_and_circles:
             if isinstance(i, Circle):
-                node_kwargs = {'line width': str(i.line_width) + 'pt',
-                               "radius": str(i.radius)}
-                pic.append(TikZDraw([TikZCoordinate(i.x_center, i.y_center), 'circle'],
-                                    options=TikZOptions(**node_kwargs)))
+                node_kwargs = {"line width": str(i.line_width) + "pt", "radius": str(i.radius)}
+                center = TikZCoordinate(i.center.x_coordinate, i.center.y_coordinate)
+                pic.append(TikZDraw([center, "circle"], options=TikZOptions(**node_kwargs)))
             elif isinstance(i, Line):
-                node_kwargs = {'line width': str(i.line_width) + 'pt'}
-                first = TikZCoordinate(i.x_first, i.y_first)
-                second = TikZCoordinate(i.x_second, i.y_second)
-                pic.append(TikZDraw([first, '--', second],
-                                    options=TikZOptions(**node_kwargs)))
+                node_kwargs = {"line width": str(i.line_width) + "pt"}
+                first = TikZCoordinate(i.point_first.x_coordinate, i.point_first.y_coordinate)
+                second = TikZCoordinate(i.point_second.x_coordinate, i.point_second.y_coordinate)
+                pic.append(TikZDraw([first, "--", second], options=TikZOptions(**node_kwargs)))
 
     return doc
 
