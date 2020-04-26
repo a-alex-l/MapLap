@@ -2,9 +2,7 @@ import random
 from detector import Circle, Line, Point
 
 
-def generator_images(
-        random_seed=0, circles=5, lines=5, max_thickness=1, size=100
-) -> list:
+def generator_images(random_seed, circles, lines, max_thickness, size) -> list:
     # ->ListOfLinesAndCircles
     random.seed(random_seed)
     figures = []
