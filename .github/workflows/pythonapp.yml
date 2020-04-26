@@ -29,6 +29,7 @@ jobs:
       with:
         python-root-list: "maplap"
         use-mypy: false
+        use-isort: false
         extra-pylint-options: "--max-line-length=100 --disable=C0111 --disable=E0401"
         extra-pycodestyle-options: "--max-line-length=100"
         extra-flake8-options: "--max-line-length=100"
