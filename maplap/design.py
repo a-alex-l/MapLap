@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-import constant as C
+import constant as CO
 
 
 class UiMapLap:
@@ -89,14 +89,14 @@ class UiMapLap:
         self.pencil = QtWidgets.QPushButton(self.panel_tab)
         self.pencil.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(C.PENSIL), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(CO.PENSIL), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.pencil.setIcon(icon)
         self.pencil.setObjectName("pencil")
         self.painting.addWidget(self.pencil)
         self.eraser = QtWidgets.QPushButton(self.panel_tab)
         self.eraser.setText("")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap(C.ERASER), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon1.addPixmap(QtGui.QPixmap(CO.ERASER), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.eraser.setIcon(icon1)
         self.eraser.setObjectName("eraser")
         self.painting.addWidget(self.eraser)

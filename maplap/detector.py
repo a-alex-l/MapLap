@@ -202,8 +202,8 @@ class Detector:
         image = 255 * np.ones(input_image.shape, input_image.dtype)
         if lines:
             for line in lines:
-                cv2.line(image, (line.point_first.x_coord, line.point_first.y_coord),
-                         (line.point_second.x_coord, line.point_second.y_coord),
+                cv2.line(image, (line.start.x_coord, line.start.y_coord),
+                         (line.end.x_coord, line.end.y_coord),
                          (0, 0, 0), line.line_width)
         if circles:
             for circle in circles:
