@@ -27,7 +27,9 @@ class UiMapLap:
         )
         sizePolicy.setHorizontalStretch(100)
         sizePolicy.setVerticalStretch(100)
-        sizePolicy.setHeightForWidth(self.central_widget.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.central_widget.sizePolicy().hasHeightForWidth()
+        )
         self.central_widget.setSizePolicy(sizePolicy)
         self.central_widget.setMaximumSize(QtCore.QSize(screen_w, screen_h))
         self.central_widget.setFocusPolicy(QtCore.Qt.NoFocus)
@@ -333,5 +335,6 @@ class UiMapLap:
         self.box_speed_rate.setTitle(_translate("MapLap", "&Speed rate"))
         self.box_min_radius.setTitle(_translate("MapLap", "&Min radius"))
         self.panel_settings.setTabText(
-            self.panel_settings.indexOf(self.settings_tab), _translate("MapLap", "settings")
+            self.panel_settings.indexOf(self.settings_tab),
+            _translate("MapLap", "settings"),
         )
