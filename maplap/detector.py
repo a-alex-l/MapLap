@@ -1,43 +1,45 @@
 import math
 from typing import List
+
 import cv2
 import numpy as np
 
 
 class Point:
-    first: int
-    second: int
+    x_coord: int
+    y_coord: int
 
     def __init__(self, first: int, second: int):
-        self.first = first
-        self.second = second
+        self.x_coord = first
+        self.y_coord = second
 
     def __repr__(self):
         return str(self)
 
     def __str__(self):
-        return f"{self.first} {self.second}"
+        return f"{self.x_coord} {self.y_coord}"
 
     def __gt__(self, other):
-        return self.first < other.first or (
-            self.first == other.first and self.second < other.second)
+        return self.x_coord < other.x_coord or \
+               self.x_coord == other.x_coord and \
+               self.y_coord < other.y_coord
 
 
 class Line:
-    point_first: Point
-    point_second: Point
+    start: Point
+    end: Point
     line_width: int
 
-    def __init__(self, point_first: Point, point_second: Point, line_width: int):
-        self.point_first = point_first
-        self.point_second = point_second
+    def __init__(self, start: Point, end: Point, line_width: int):
+        self.start = start
+        self.end = end
         self.line_width = line_width
 
     def __repr__(self):
         return str(self)
 
     def __str__(self):
-        return f"{self.point_first} {self.point_second} {self.line_width}"
+        return f"{self.start} {self.end} {self.line_width}"
 
 
 class Circle:
@@ -61,14 +63,15 @@ class Circle:
 
     def count_intersections(self, gray_image: np.ndarray, speed_rate: int) -> int:
         count: int = 0
-        if self.center.first - self.radius < 0 \
-                or self.center.first + self.radius >= gray_image.shape[1] \
-                or self.center.second - self.radius < 0 \
-                or self.center.second + self.radius >= gray_image.shape[0]:
+        if self.center.x_coord - self.radius < 0 \
+                or self.center.x_coord + self.radius >= gray_image.shape[1] \
+                or self.center.y_coord - self.radius < 0 \
+                or self.center.y_coord + self.radius >= gray_image.shape[0]:
             return 0
         for phi in np.arange(0.0, 2 * np.pi, speed_rate / self.radius):
-            if gray_image[round(self.center.second + self.radius * math.sin(phi))] \
-                    [round(self.center.first + self.radius * math.cos(phi))] != 0:
+            x_coord = round(self.center.y_coord + self.radius * math.sin(phi))
+            y_coord = round(self.center.x_coord + self.radius * math.cos(phi))
+            if gray_image[x_coord][y_coord] != 0:
                 count = count + speed_rate
         return count
 
@@ -111,7 +114,7 @@ class LineDetector:
         self.threshold_line = threshold_line
         self.min_line_length = min_line_length
         self.max_line_gap = max_line_gap
-        self. speed_rate = speed_rate
+        self.speed_rate = speed_rate
 
     def detect_lines_without_width(self, const_image: np.ndarray) -> list:
         coordinates: list = cv2.HoughLinesP(const_image,
@@ -153,14 +156,14 @@ class CircleDetector:
                  (1, 0), (0, 1), (-1, 0), (0, -1))
         for move in moves:
             for _ in range(0, self.max_thickness):
-                circle.center.first = circle.center.first + move[0]
-                circle.center.second = circle.center.second + move[1]
+                circle.center.x_coord = circle.center.x_coord + move[0]
+                circle.center.y_coord = circle.center.y_coord + move[1]
                 count_non_zero_move = circle.count_intersections(gray_image, self.speed_rate)
                 if count_non_zero_move > self.is_circle * 2 * np.pi * circle.radius:
                     count_non_zero_now = count_non_zero_move
                 else:
-                    circle.center.first = circle.center.first - move[0]
-                    circle.center.second = circle.center.second - move[1]
+                    circle.center.x_coord = circle.center.x_coord - move[0]
+                    circle.center.y_coord = circle.center.y_coord - move[1]
                     break
                 if count_non_zero_now > self.is_circle * 2 * np.pi * circle.radius and \
                         circle.radius > self.min_radius:
@@ -200,13 +203,13 @@ class CircleDetector:
                 self._find_right_center_and_radius(gray_image, center)
                 center.find_line_width(gray_image, self.is_circle, self.speed_rate)
                 for center_delete in centers:
-                    if math.hypot(center.center.first - center_delete.center.first,
-                                  center.center.second - center_delete.center.second) <= \
+                    if math.hypot(center.center.x_coord - center_delete.center.x_coord,
+                                  center.center.y_coord - center_delete.center.y_coord) <= \
                             2 * center.line_width:
                         centers.remove(center_delete)
                 for center_delete in circles:
-                    if math.hypot(center.center.first - center_delete.center.first,
-                                  center.center.second - center_delete.center.second) <= \
+                    if math.hypot(center.center.x_coord - center_delete.center.x_coord,
+                                  center.center.y_coord - center_delete.center.y_coord) <= \
                             2 * center.line_width:
                         circles.remove(center_delete)
                 circles.append(center)
