@@ -1,4 +1,5 @@
 import random
+
 from detector import Circle, Line, Point
 
 
