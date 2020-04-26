@@ -2,6 +2,7 @@
 import sys
 import constant as C
 
+
 class SettingsParams:
     """Params for settings"""
 
