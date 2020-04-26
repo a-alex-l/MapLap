@@ -53,12 +53,11 @@ class Settings:
     # I know that better - ok
 
     def __init__(self):
-        file_settings = open(C.DEFAULT_SETTINGS, "r")
-        all_lines = [line for line in file_settings]
-        assert len(all_lines) == C.SETTINGS_PARAMS
-        for i in range(C.SETTINGS_PARAMS):
-            setattr(self, C.SETTINGS_ATR[i], SettingsParams(all_lines[i]))
-        file_settings.close()
+        with open(C.DEFAULT_SETTINGS, "r") as file_settings:
+            all_lines = [line for line in file_settings]
+            assert len(all_lines) == C.SETTINGS_PARAMS
+            for i in range(C.SETTINGS_PARAMS):
+                setattr(self, C.SETTINGS_ATR[i], SettingsParams(all_lines[i]))
         self.read_settings()
 
     def read_settings(self):
