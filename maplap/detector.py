@@ -20,7 +20,7 @@ class Point:
 
     def __gt__(self, other):
         return self.first < other.first or (
-                self.first == other.first and self.second < other.second)
+            self.first == other.first and self.second < other.second)
 
 
 class Line:
@@ -146,7 +146,7 @@ class CircleDetector:
         self.min_radius = 5
         self.max_radius = 0
 
-    def find_right_center_and_radius(self, gray_image: np.ndarray, circle: Circle):
+    def _find_right_center_and_radius(self, gray_image: np.ndarray, circle: Circle):
         count_non_zero_now = circle.count_intersections(gray_image, self.speed_rate)
         moves = ((1, 1), (-1, 1), (-1, -1), (1, -1),
                  (1, 0), (0, 1), (-1, 0), (0, -1),
@@ -197,7 +197,7 @@ class CircleDetector:
         for center in centers:
             if center.count_intersections(gray_image, self.speed_rate) \
                     > self.is_circle * 2 * np.pi * center.radius:
-                self.find_right_center_and_radius(gray_image, center)
+                self._find_right_center_and_radius(gray_image, center)
                 center.find_line_width(gray_image, self.is_circle, self.speed_rate)
                 for center_delete in centers:
                     if math.hypot(center.center.first - center_delete.center.first,
