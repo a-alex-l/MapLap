@@ -308,6 +308,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
                 self.save_image()
                 self.resize_window()
         elif event.key() == QtCore.Qt.Key_F5:
+            self.resizeEvent(C.UPDATE)
             self.__cropping()
         elif event.key() == QtCore.Qt.Key_F4:
             self.__rotate()
