@@ -1,16 +1,16 @@
 class Point:
-    x: int
-    y: int
+    x_coordinate: int
+    y_coordinate: int
 
-    def __init__(self, x: int, y: int):
-        self.x = x
-        self.y = y
+    def __init__(self, x_coordinate: int, y_coordinate: int):
+        self.x_coordinate = x_coordinate
+        self.y_coordinate = y_coordinate
 
     def __repr__(self):
         return str(self)
 
     def __str__(self):
-        return f"{self.x} {self.y}"
+        return f"{self.x_coordinate} {self.y_coordinate}"
 
 
 class Line:
@@ -45,3 +45,5 @@ class Circle:
 
     def __str__(self):
         return f"{self.center} {self.radius} {self.line_width}"
+
+# from detector branch
