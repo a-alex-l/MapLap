@@ -34,6 +34,7 @@ jobs:
         extra-black-options: "--line-length=100"
         use-black: false
         use-mypy: false
+        use-isort: false
     - name: Test with pytest
       run: |
         pip install pytest
