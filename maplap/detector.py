@@ -51,7 +51,7 @@ class LineDetector:
         coordinates: list = cv2.HoughLinesP(
             const_image,
             rho=1,
-            theta=math.pi / 180,
+            theta=math.pi / 1800,
             threshold=self.threshold_line,
             minLineLength=self.min_line_length,
             maxLineGap=self.max_line_gap,
@@ -213,11 +213,17 @@ class Detector:
         cv2.imwrite(file_path, image)
 
     def detect(self, file_path: str) -> List[Line] and List[Circle]:
+        from datetime import datetime
+        t_start = datetime.now()
         input_image = cv2.imread(file_path)
         gray_image = self.contrast.get_black_white_image(input_image)
         canny_image = cv2.Canny(gray_image, 100, 50)
         lines = self.detector_lines.detect_lines_without_width(canny_image)
+        print(len(lines))
         circles_centers = self.detector_circles.detect_centers_of_circles(gray_image)
+        print(len(circles_centers))
         circles = self.detector_circles.clarify_circles(gray_image, circles_centers)
         self._show_finds(file_path, lines, circles)
+        t_end = datetime.now()
+        print("Time", t_end - t_start)
         return lines, circles
