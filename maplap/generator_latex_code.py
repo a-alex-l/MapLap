@@ -1,6 +1,6 @@
 from pylatex import Document, TikZ, TikZCoordinate, TikZDraw, TikZOptions
 
-from detector import Circle, Line
+from geometry import Circle, Line
 
 
 def generator_latex_code(list_of_lines_and_circles) -> Document:
