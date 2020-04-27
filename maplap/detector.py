@@ -96,11 +96,7 @@ class CircleDetector:
             (1, 0),
             (0, 1),
             (-1, 0),
-            (0, -1),
-            (1, 0),
-            (0, 1),
-            (-1, 0),
-            (0, -1),
+            (0, -1)
         )
         for move in moves:
             for _ in range(0, self.max_thickness):
@@ -132,7 +128,7 @@ class CircleDetector:
         centers: list = cv2.HoughCircles(
             gray_image,
             cv2.HOUGH_GRADIENT,
-            1,
+            5,
             minDist=0.0001,
             param1=50,
             param2=self.threshold_center,
@@ -143,8 +139,8 @@ class CircleDetector:
             circles: list = []
             if centers is not None:
                 for center in centers[0, :]:
-                    x_center, y_center, radius = map(int, center)
-                    circles.append(Circle(Point(x_center, y_center), radius, 1))
+                    x_center, y_center, radius = center
+                    circles.append(Circle(Point(x_center, y_center), radius, 1.0))
             return circles
         return []
 
@@ -207,9 +203,10 @@ class Detector:
                          (0, 0, 0), line.line_width)
         if circles:
             for circle in circles:
-                cv2.circle(image, (circle.center.x_coord, circle.center.y_coord),
-                           circle.radius + circle.line_width // 2,
-                           (0, 0, 0), circle.line_width)
+                cv2.circle(image, (int(round(circle.center.x_coord)),
+                                   int(round(circle.center.y_coord))),
+                           int(round(circle.radius + circle.line_width / 2)),
+                           (0, 0, 0), int(round(circle.line_width)))
         cv2.imwrite(file_path, image)
 
     def detect(self, file_path: str) -> List[Line] and List[Circle]:
@@ -222,7 +219,11 @@ class Detector:
         print(len(lines))
         circles_centers = self.detector_circles.detect_centers_of_circles(gray_image)
         print(len(circles_centers))
+        t_end = datetime.now()
+        print("Time", t_end - t_start)
         circles = self.detector_circles.clarify_circles(gray_image, circles_centers)
+        t_end = datetime.now()
+        print("Time", t_end - t_start)
         self._show_finds(file_path, lines, circles)
         t_end = datetime.now()
         print("Time", t_end - t_start)

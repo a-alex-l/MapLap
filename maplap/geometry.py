@@ -4,10 +4,10 @@ import numpy as np
 
 
 class Point:
-    x_coord: int
-    y_coord: int
+    x_coord: float
+    y_coord: float
 
-    def __init__(self, first: int, second: int):
+    def __init__(self, first: float, second: float):
         self.x_coord = first
         self.y_coord = second
 
@@ -44,10 +44,10 @@ class Line:
 
 class Circle:
     center: Point
-    radius: int
-    line_width: int
+    radius: float
+    line_width: float
 
-    def __init__(self, center: Point, radius: int, line_width: int = 1):
+    def __init__(self, center: Point, radius: float, line_width: float = 1):
         self.center = center
         self.radius = radius
         self.line_width = line_width
@@ -64,29 +64,29 @@ class Circle:
     def count_intersections(self, gray_image: np.ndarray, speed_rate: float) -> float:
         count: float = 0
         if (
-            self.center.x_coord - self.radius < 0
-            or self.center.x_coord + self.radius >= gray_image.shape[1]
-            or self.center.y_coord - self.radius < 0
-            or self.center.y_coord + self.radius >= gray_image.shape[0]
+            round(self.center.x_coord - self.radius) < 0
+            or round(self.center.x_coord + self.radius) >= gray_image.shape[1]
+            or round(self.center.y_coord - self.radius) < 0
+            or round(self.center.y_coord + self.radius) >= gray_image.shape[0]
         ):
             return 0
         for phi in np.arange(0.0, 2 * np.pi, speed_rate / self.radius):
-            x_coord = round(self.center.y_coord + self.radius * math.sin(phi))
-            y_coord = round(self.center.x_coord + self.radius * math.cos(phi))
+            x_coord: int = int(round(self.center.y_coord + self.radius * math.sin(phi)))
+            y_coord: int = int(round(self.center.x_coord + self.radius * math.cos(phi)))
             if gray_image[x_coord][y_coord] != 0:
                 count = count + speed_rate
         return count
 
     def find_line_width(
-        self, gray_image: np.ndarray, is_circle: float, speed_rate: int
+        self, gray_image: np.ndarray, is_circle: float, speed_rate: float
     ) -> None:
-        min_radius = self.radius
+        min_radius: float = self.radius
         while (
             self.count_intersections(gray_image, speed_rate)
             > is_circle * 2 * np.pi * self.radius
         ):
-            self.radius = self.radius + 1
-        self.line_width = self.radius - min_radius - 1
+            self.radius = self.radius + speed_rate/10
+        self.line_width = self.radius - min_radius - speed_rate/10
         self.radius = min_radius
 
 
