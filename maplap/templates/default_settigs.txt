@@ -1,10 +1,10 @@
 block_size,101,[3 : +inf],[11 : 501],Size of block which analized for making only white/black image.
 level_black,20,[0 : 255],[10 : 40],How more mast be different beetwen black and average.
-threshold_line,100,[0 : +inf],[30 : 300],How many line signs must be for detecting a one.
-min_line_length,15,[0 : +inf],[1 : 150],Minimal line length.
+threshold_line,50,[0 : +inf],[30 : 300],How many line signs must be for detecting a one.
+min_line_length,39,[0 : +inf],[1 : 150],Minimal line length.
 max_line_gap,10,[0 : +inf],[0 : 50],Maximal distance beetwen two signs to be considered in the same line.
 is_circle,0.75,[0 : 1],[0.55 : 0.9],The fraction since which the circle can be considered as a circle.
-max_thickness,20,[1 : +inf],[5 : 50],Maximal thickness of line and circles.
+max_thickness,14,[1 : +inf],[5 : 50],Maximal thickness of line and circles.
 speed_rate,1.0,[1 : +inf],[1 : 10],It means check every (speed_rate)th pixel; for estimate the is_circle.
 threshold_center,20,[0 : +inf],[10 : 300],How many line signs must be for detecting a one.
 min_radius,5,[3 : +inf],[3 : 100],Minimal radius. (Attention you can't use 0 in this case)

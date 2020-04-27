@@ -1,6 +1,6 @@
 """constant file"""
 
-START_PICTURE = "templates/MapLap.png"
+START_PICTURE = "templates/MapLap2.png"
 TEMP = "templates/temp.png"
 RES = "templates/MapLap_res.png"
 PENSIL = "templates/pensil.png"
