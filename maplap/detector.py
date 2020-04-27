@@ -51,7 +51,7 @@ class LineDetector:
         coordinates: list = cv2.HoughLinesP(
             const_image,
             rho=1,
-            theta=math.pi / 1800,
+            theta=np.pi / 1800,
             threshold=self.threshold_line,
             minLineLength=self.min_line_length,
             maxLineGap=self.max_line_gap,
@@ -89,14 +89,14 @@ class CircleDetector:
     def _find_right_center_and_radius(self, gray_image: np.ndarray, circle: Circle):
         count_non_zero_now = circle.count_intersections(gray_image, self.speed_rate)
         moves = (
-            (1, 1),
-            (-1, 1),
-            (-1, -1),
-            (1, -1),
-            (1, 0),
-            (0, 1),
-            (-1, 0),
-            (0, -1)
+            (0.5, 0.5),
+            (-0.5, 0.5),
+            (-0.5, -0.5),
+            (0.5, -0.5),
+            (0.5, 0),
+            (0, 0.5),
+            (-0.5, 0),
+            (0, -0.5)
         )
         for move in moves:
             for _ in range(0, self.max_thickness):
@@ -112,23 +112,23 @@ class CircleDetector:
                     circle.center.y_coord = circle.center.y_coord - move[1]
                     break
                 if (
-                    count_non_zero_now > self.is_circle * 2 * np.pi * circle.radius
-                    and circle.radius > self.min_radius
+                        count_non_zero_now > self.is_circle * 2 * np.pi * circle.radius
+                        and circle.radius > self.min_radius
                 ):
-                    circle.radius = circle.radius - 1
+                    circle.radius = circle.radius - self.speed_rate / 10
                     count_non_zero_new = circle.count_intersections(
                         gray_image, self.speed_rate
                     )
                     if count_non_zero_new > self.is_circle * 2 * np.pi * circle.radius:
                         count_non_zero_now = count_non_zero_new
                     else:
-                        circle.radius = circle.radius + 1
+                        circle.radius = circle.radius + self.speed_rate / 10
 
     def detect_centers_of_circles(self, gray_image: np.ndarray) -> List[Circle]:
         centers: list = cv2.HoughCircles(
             gray_image,
             cv2.HOUGH_GRADIENT,
-            5,
+            1.2,
             minDist=0.0001,
             param1=50,
             param2=self.threshold_center,
@@ -145,33 +145,32 @@ class CircleDetector:
         return []
 
     def clarify_circles(
-        self, gray_image: np.ndarray, centers: List[Circle]
+            self, gray_image: np.ndarray, centers: List[Circle]
     ) -> List[Circle]:
         circles: list = []
         centers.sort()
         for center in centers:
-            if (
-                center.count_intersections(gray_image, self.speed_rate)
-                > self.is_circle * 2 * np.pi * center.radius
-            ):
+            if (center.count_intersections(gray_image, self.speed_rate)
+                    > self.is_circle * 1.5 * np.pi * center.radius):
                 self._find_right_center_and_radius(gray_image, center)
+            if (center.count_intersections(gray_image, self.speed_rate)
+                    > self.is_circle * 2 * np.pi * center.radius):
                 center.find_line_width(gray_image, self.is_circle, self.speed_rate)
+                print("Circle found", center)
                 for center_delete in centers:
                     if (
-                        math.hypot(
-                            center.center.x_coord - center_delete.center.x_coord,
-                            center.center.y_coord - center_delete.center.y_coord,
-                        )
-                        <= 2 * center.line_width
+                            math.hypot(
+                                center.center.x_coord - center_delete.center.x_coord,
+                                center.center.y_coord - center_delete.center.y_coord)
+                            <= 2 * center.line_width
                     ):
                         centers.remove(center_delete)
                 for center_delete in circles:
                     if (
-                        math.hypot(
-                            center.center.x_coord - center_delete.center.x_coord,
-                            center.center.y_coord - center_delete.center.y_coord,
-                        )
-                        <= 2 * center.line_width
+                            math.hypot(
+                                center.center.x_coord - center_delete.center.x_coord,
+                                center.center.y_coord - center_delete.center.y_coord)
+                            <= 2 * center.line_width
                     ):
                         circles.remove(center_delete)
                 circles.append(center)
