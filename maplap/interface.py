@@ -1,61 +1,13 @@
 """interface"""
 import sys
 
-import constant as C
 from PyQt5 import Qt, QtCore, QtGui, QtWidgets
 
+import constant as CO
 from design import UiMapLap
+from settings import Settings, SettingsParams
 from geometry import Rectangle
-
-
-class SettingsParams:
-    """Params for settings"""
-
-    # pylint: disable=R1721
-    # I know that better - ok
-
-    def __init__(self, line_param):
-        params = list(line_param.split(","))
-        assert len(params) == C.PARAMS_IN_SETTING
-        for i in range(C.PARAMS_IN_SETTING):
-            setattr(self, C.SETTINGS_PARAM_ATR[i], params[i])
-
-
-class Settings:
-    """Settings struct"""
-
-    # pylint: disable=R1721
-    # I know that better - ok
-
-    def __init__(self):
-        with open(C.DEFAULT_SETTINGS, "r") as file_settings:
-            all_lines = [line for line in file_settings]
-            assert len(all_lines) == C.SETTINGS_PARAMS
-            for i in range(C.SETTINGS_PARAMS):
-                setattr(self, C.SETTINGS_ATR[i], SettingsParams(all_lines[i]))
-        self.read_settings()
-
-    def read_settings(self):
-        """read settings file"""
-        try:
-            with open(C.SETTINGS, "r") as file_settings:
-                all_lines = [line for line in file_settings]
-                assert len(all_lines) == C.SETTINGS_PARAMS
-                for i in range(C.SETTINGS_PARAMS):
-                    name, value = all_lines[i].split()
-                    setattr(getattr(self, C.SETTINGS_ATR[i]), C.SETTINGS_PARAM_ATR[0], name)
-                    setattr(getattr(self, C.SETTINGS_ATR[i]), C.SETTINGS_PARAM_ATR[1], value)
-        except IOError:
-            print("Left default settings!")
-
-    def save_settings(self):
-        """save settings to file"""
-        with open(C.SETTINGS, "w") as file_settings:
-            for i in range(C.SETTINGS_PARAMS):
-                param = getattr(self, C.SETTINGS_ATR[i])
-                attr1 = getattr(param, C.SETTINGS_PARAM_ATR[0])
-                attr2 = getattr(param, C.SETTINGS_PARAM_ATR[1])
-                print(f"{attr1} {attr2}", file=file_settings)
+import detector
 
 
 class MainWindow(QtWidgets.QMainWindow, UiMapLap):
@@ -89,8 +41,8 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.rotate.clicked.connect(self.__rotate)
         self.pencil.clicked.connect(self.__pencil)
         self.eraser.clicked.connect(self.__eraser)
-        self.spin_block_size.valueChanged.connect(self.__settings_block_size)
-        self.slider_block_size.valueChanged.connect(self.__settings_block_size)
+        self.spin_block_size.valueChanged.connect(self.__settings_block_size_spin)
+        self.slider_block_size.valueChanged.connect(self.__settings_block_size_slider)
         self.spin_max_thick.valueChanged.connect(self.__settings_max_thick)
         self.slider_max_thick.valueChanged.connect(self.__settings_max_thick)
         self.spin_min_line_len.valueChanged.connect(self.__settings_min_line_len)
@@ -99,12 +51,11 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.slider_min_radius.valueChanged.connect(self.__settings_min_radius)
         self.spin_speed_rate.valueChanged.connect(self.__settings_speed_rate_spin)
         self.slider_speed_rate.valueChanged.connect(self.__settings_speed_rate_slider)
-        # print(self.desktop().screenGeometry().width())
 
         self.settings = Settings()
-        self.angle = [0, 0]
-        self.picture = self.picture_res = C.START_PICTURE
-        self.picture_factor = C.INIT_FACTOR
+        self.angle = [CO.ZERO, CO.ZERO]
+        self.picture = self.picture_res = CO.START_PICTURE
+        self.picture_factor = CO.INIT_FACTOR
         self.action = "no"
         self.area = Rectangle()
         self.need_update = False
@@ -113,43 +64,52 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.picture_in.mousePressEvent = self.do_nothing
         self.picture_in.mouseReleaseEvent = self.do_nothing
         self.path = Qt.QPainterPath()
+        self.lines = []
+        self.circles = []
         self.init_picture()
         self.set_settings()
 
     def __save_tex(self):
         """changing, save ..."""
+        print(self.lines)
+        print(self.circles)
         self.resize_window()  # doesn't do anything yet
         ##
 
     def __save_pdf(self):
         """saving pdf"""
-        self.picture_in.pixmap().save("maplap/templates/temp.pdf", "PDF")  # it doesn't seem to work
+        self.picture_in.pixmap().save(
+            "maplap/templates/temp.pdf", "PDF"
+        )  # it doesn't seem to work
         ##
 
     def __cropping(self):
         """run the algorithm and display the picture"""
+        self.fix_param()
         self.settings.save_settings()
-        self.picture_res = C.RES
-        self.save_image(C.PICTURE_OUT)
+        self.picture_res = CO.RES
+        self.save_image(CO.PICTURE_OUT)
+        detect = detector.Detector(self.settings)
+        self.lines, self.circles = detect.detect(self.picture_res)
         self.update_image()
         ##
 
     def init_picture(self):
         """initial installation of the picture"""
         self.resize_window()
-        self.picture = C.TEMP
+        self.picture = CO.TEMP
         self.save_image()
         self.__cropping()
         self.resize_window()
 
-    def save_image(self, is_picture_in=True, file_format=C.FORMAT):
+    def save_image(self, is_picture_in=True, file_format=CO.FORMAT):
         """saves the image to the desired file"""
         if is_picture_in:
-            self.picture_in.pixmap().save(C.TEMP, file_format)
-            self.angle[0] = 0
+            self.picture_in.pixmap().save(CO.TEMP, file_format)
+            self.angle[0] = CO.ZERO
         else:
-            self.picture_in.pixmap().save(C.RES, file_format)
-            self.angle[1] = 0
+            self.picture_in.pixmap().save(CO.RES, file_format)
+            self.angle[1] = CO.ZERO
 
     def resize_window(self):
         """normalizes the window size when changing it"""
@@ -157,11 +117,11 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         pixmap_res = QtGui.QPixmap(self.picture_res)
         pixmap = pixmap.transformed(QtGui.QTransform().rotate(self.angle[0]))
         pixmap_res = pixmap_res.transformed(QtGui.QTransform().rotate(self.angle[1]))
-        width_some = 2 * C.SIZE_LINE + C.SIZE_PANEL
+        width_some = CO.DOUBLE * CO.SIZE_LINE + CO.SIZE_PANEL
         width_pixmap_res = pixmap_res.width() * pixmap.height() / pixmap_res.height()
         new_width = pixmap.width() + width_pixmap_res  #
         self.setMinimumSize(
-            QtCore.QSize(new_width / pixmap.height() * C.MIN_H + width_some, C.MIN_H)
+            QtCore.QSize(new_width / pixmap.height() * CO.MIN_H + width_some, CO.MIN_H)
         )
         self.resize(
             (pixmap.width() + width_pixmap_res) * self.picture_factor + width_some,
@@ -182,7 +142,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.picture_in._pixmap = QtGui.QPixmap(self.picture_in.pixmap())
         self.picture_out._pixmap = QtGui.QPixmap(self.picture_out.pixmap())
         self.resize(width, height)
-        self.resizeEvent(C.UPDATE)
+        self.resizeEvent(CO.UPDATE)
 
     def __select_area(self):
         """changes the activity to select an area"""
@@ -199,7 +159,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             self.picture_in.mouseMoveEvent = self.do_nothing
             self.picture_in.mousePressEvent = self.do_nothing
             self.picture_in.mouseReleaseEvent = self.do_nothing
-            self.resizeEvent(C.UPDATE)
+            self.resizeEvent(CO.UPDATE)
         elif mode == "select":
             self.select_area.setText("no select area")
             self.picture_in.setProperty("cursor", QtGui.QCursor(QtCore.Qt.CrossCursor))
@@ -208,18 +168,22 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             self.picture_in.mouseReleaseEvent = self.mouse_release_event_select
         elif mode == "eraser":
             self.select_area.setText("select area")
-            self.picture_in.setProperty("cursor", QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+            self.picture_in.setProperty(
+                "cursor", QtGui.QCursor(QtCore.Qt.PointingHandCursor)
+            )
             self.picture_in.mouseMoveEvent = self.draw
             self.picture_in.mousePressEvent = self.set_point
             self.picture_in.mouseReleaseEvent = self.end_path
-            self.resizeEvent(C.UPDATE)
+            self.resizeEvent(CO.UPDATE)
         elif mode == "pencil":
             self.select_area.setText("select area")
-            self.picture_in.setProperty("cursor", QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+            self.picture_in.setProperty(
+                "cursor", QtGui.QCursor(QtCore.Qt.PointingHandCursor)
+            )
             self.picture_in.mouseMoveEvent = self.draw
             self.picture_in.mousePressEvent = self.set_point
             self.picture_in.mouseReleaseEvent = self.end_path
-            self.resizeEvent(C.UPDATE)
+            self.resizeEvent(CO.UPDATE)
         else:
             print("error in change_action")
             self.change_action("no")
@@ -229,20 +193,22 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         """file selection from the directory"""
         dialog = QtWidgets.QFileDialog(self)
         dialog.setFileMode(QtWidgets.QFileDialog.ExistingFile)
-        dialog.setNameFilter(C.TEMPLATE_FILE)
+        dialog.setNameFilter(CO.TEMPLATE_FILE)
         if dialog.exec_():
             self.picture = "".join(dialog.selectedFiles())
-            self.angle[0] = 0
-            self.picture_factor = C.INIT_FACTOR
+            self.angle[0] = CO.ZERO
+            self.picture_factor = CO.INIT_FACTOR
             self.init_picture()
 
     def __rotate(self):
         """rotates images"""
         pixmap = QtGui.QPixmap(self.picture)
         pixmap = pixmap.transformed(QtGui.QTransform().rotate(self.angle[0]))
-        self.picture_factor = (self.picture_in.height() + 2 * C.BORDER) / pixmap.height()
-        self.angle[0] = (self.angle[0] + C.ROTATE) % C.FULL_ROTATE
-        self.angle[1] = (self.angle[1] + C.ROTATE) % C.FULL_ROTATE
+        self.picture_factor = (
+            self.picture_in.height() + CO.DOUBLE * CO.BORDER
+        ) / pixmap.height()
+        self.angle[0] = (self.angle[0] + CO.ROTATE) % CO.FULL_ROTATE
+        self.angle[1] = (self.angle[1] + CO.ROTATE) % CO.FULL_ROTATE
         self.resize_window()
 
     def check_area_coord(self):
@@ -251,16 +217,16 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             self.area.x_start, self.area.x_end = self.area.x_end, self.area.x_start
         if self.area.y_start > self.area.y_end:
             self.area.y_start, self.area.y_end = self.area.y_end, self.area.y_start
-        self.area.x_start = max(self.area.x_start, 0)
-        self.area.y_start = max(self.area.y_start, 0)
+        self.area.x_start = max(self.area.x_start, CO.ZERO)
+        self.area.y_start = max(self.area.y_start, CO.ZERO)
         self.area.x_end = min(self.area.x_end, self.picture_in.width())
-        self.area.y_end = min(self.area.y_end, self.picture_in.height() + C.CURSOR)
+        self.area.y_end = min(self.area.y_end, self.picture_in.height() + CO.CURSOR)
 
     def keyPressEvent(self, event):
         """keyboard click events"""
         if event.key() == QtCore.Qt.Key_Return:  # enter
             if self.is_area_up:
-                self.resizeEvent(C.UPDATE)
+                self.resizeEvent(CO.UPDATE)
                 self.check_area_coord()
                 copy = self.picture_in.pixmap().copy(
                     self.area.x_start,
@@ -273,36 +239,40 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
                 self.resize_window()
         if event.key() == QtCore.Qt.Key_Backspace:
             if self.is_area_up:
-                self.resizeEvent(C.UPDATE)
+                self.resizeEvent(CO.UPDATE)
                 self.check_area_coord()
                 self.erase_rect()
                 self.save_image()
                 self.resize_window()
         elif event.key() == QtCore.Qt.Key_F5:
-            self.resizeEvent(C.UPDATE)
+            self.resizeEvent(CO.UPDATE)
             self.__cropping()
         elif event.key() == QtCore.Qt.Key_F4:
             self.__rotate()
         elif event.modifiers():
             if event.key() == QtCore.Qt.Key_Up:
-                self.move(self.pos().x() - C.STEP, self.pos().y())
+                self.move(self.pos().x() - CO.STEP, self.pos().y())
             if event.key() == QtCore.Qt.Key_Down:
-                self.move(self.pos().x() + C.STEP, self.pos().y())
+                self.move(self.pos().x() + CO.STEP, self.pos().y())
             elif event.key() == QtCore.Qt.Key_Escape:
                 sys.exit(0)
         else:
             if event.key() == QtCore.Qt.Key_Up:
-                self.move(self.pos().x(), self.pos().y() - C.STEP)
+                self.move(self.pos().x(), self.pos().y() - CO.STEP)
             if event.key() == QtCore.Qt.Key_Down:
-                self.move(self.pos().x(), self.pos().y() + C.STEP)
+                self.move(self.pos().x(), self.pos().y() + CO.STEP)
 
     def resizeEvent(self, event):
         """the resize event of the window"""
         self.picture_in.setPixmap(
-            self.picture_in._pixmap.scaled(self.width(), self.height(), QtCore.Qt.KeepAspectRatio)
+            self.picture_in._pixmap.scaled(
+                self.width(), self.height(), QtCore.Qt.KeepAspectRatio
+            )
         )
         self.picture_out.setPixmap(
-            self.picture_out._pixmap.scaled(self.width(), self.height(), QtCore.Qt.KeepAspectRatio)
+            self.picture_out._pixmap.scaled(
+                self.width(), self.height(), QtCore.Qt.KeepAspectRatio
+            )
         )
         self.is_area_up = False
 
@@ -313,23 +283,23 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
     def mouse_press_event_select(self, event):
         """press event in select"""
         if self.action == "select":
-            self.resizeEvent(C.UPDATE)
+            self.resizeEvent(CO.UPDATE)
             self.area.x_start = event.x()
-            self.area.y_start = event.y() + C.CURSOR
+            self.area.y_start = event.y() + CO.CURSOR
 
     def mouse_move_event_select(self, event):
         """move event in select"""
         if self.action == "select":
             self.need_update = True
             self.area.x_end = event.x()
-            self.area.y_end = event.y() + C.CURSOR
+            self.area.y_end = event.y() + CO.CURSOR
             self.picture_in.update()
 
     def mouse_release_event_select(self, event):
         """release event in select"""
         if self.action == "select":
             self.area.x_end = event.x()
-            self.area.y_end = event.y() + C.CURSOR
+            self.area.y_end = event.y() + CO.CURSOR
 
     def paintEvent(self, event):
         """draws an area selection window"""
@@ -338,7 +308,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             self.update_image()
             paint = QtGui.QPainter()
             paint.begin(self.picture_in.pixmap())
-            paint.setOpacity(C.OPACITY_AREA)
+            paint.setOpacity(CO.OPACITY_AREA)
             paint.setBrush(QtGui.QBrush(QtCore.Qt.blue))
             paint.drawRect(
                 self.area.x_start,
@@ -384,7 +354,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
     def erase_rect(self):
         """deletes a rectangular area"""
         draw = Qt.QPainter(self.picture_in.pixmap())
-        draw.setPen(self.set_pen(C.DELETE))
+        draw.setPen(self.set_pen(CO.DELETE))
         draw.setBrush(QtCore.Qt.white)
         draw.drawRect(
             self.area.x_start,
@@ -396,16 +366,24 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
     def set_pen(self, delete=False):
         """sets the desired pen"""
         if self.action == "pencil" and not delete:
-            return Qt.QPen(QtCore.Qt.black, C.BLACK_W)
-        return Qt.QPen(QtCore.Qt.white, C.WHITE_W)
+            return Qt.QPen(QtCore.Qt.black, CO.BLACK_W)
+        return Qt.QPen(QtCore.Qt.white, CO.WHITE_W)
 
-    def __settings_block_size(self, new_num):
+    def __settings_block_size_slider(self, new_num):
         """change block size everywhere"""
-        self.slider_block_size.setProperty("value", new_num)
-        self.spin_block_size.setProperty("value", new_num)
+        self.spin_block_size.setProperty("value", new_num * CO.DOUBLE + CO.BS_START)
         setattr(
-            getattr(self.settings, C.SETTINGS_ATR[C.BLOCK_SIZE]),
-            C.SETTINGS_PARAM_ATR[C.VALUE],
+            getattr(self.settings, CO.SETTINGS_ATR[CO.BLOCK_SIZE]),
+            CO.SETTINGS_PARAM_ATR[CO.VALUE],
+            new_num * CO.DOUBLE + CO.BS_START,
+        )
+
+    def __settings_block_size_spin(self, new_num):
+        """change block size everywhere"""
+        self.slider_block_size.setProperty("value", (new_num - CO.BS_START) / CO.DOUBLE)
+        setattr(
+            getattr(self.settings, CO.SETTINGS_ATR[CO.BLOCK_SIZE]),
+            CO.SETTINGS_PARAM_ATR[CO.VALUE],
             new_num,
         )
 
@@ -414,8 +392,8 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.slider_max_thick.setProperty("value", new_num)
         self.spin_max_thick.setProperty("value", new_num)
         setattr(
-            getattr(self.settings, C.SETTINGS_ATR[C.MAX_THICKNESS]),
-            C.SETTINGS_PARAM_ATR[C.VALUE],
+            getattr(self.settings, CO.SETTINGS_ATR[CO.MAX_THICKNESS]),
+            CO.SETTINGS_PARAM_ATR[CO.VALUE],
             new_num,
         )
 
@@ -424,8 +402,8 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.slider_min_line_len.setProperty("value", new_num)
         self.spin_min_line_len.setProperty("value", new_num)
         setattr(
-            getattr(self.settings, C.SETTINGS_ATR[C.MIN_LINE_LENGTH]),
-            C.SETTINGS_PARAM_ATR[C.VALUE],
+            getattr(self.settings, CO.SETTINGS_ATR[CO.MIN_LINE_LENGTH]),
+            CO.SETTINGS_PARAM_ATR[CO.VALUE],
             new_num,
         )
 
@@ -434,167 +412,157 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.slider_min_radius.setProperty("value", new_num)
         self.spin_min_radius.setProperty("value", new_num)
         setattr(
-            getattr(self.settings, C.SETTINGS_ATR[C.MIN_RADIUS]),
-            C.SETTINGS_PARAM_ATR[C.VALUE],
+            getattr(self.settings, CO.SETTINGS_ATR[CO.MIN_RADIUS]),
+            CO.SETTINGS_PARAM_ATR[CO.VALUE],
             new_num,
         )
 
     def __settings_speed_rate_slider(self, new_num):
         """change speed rate spin"""
-        self.spin_speed_rate.setProperty("value", new_num / C.TEN)
+        self.spin_speed_rate.setProperty("value", new_num / CO.TEN)
         setattr(
-            getattr(self.settings, C.SETTINGS_ATR[C.SPEED_RATE]),
-            C.SETTINGS_PARAM_ATR[C.VALUE],
-            new_num / C.TEN,
+            getattr(self.settings, CO.SETTINGS_ATR[CO.SPEED_RATE]),
+            CO.SETTINGS_PARAM_ATR[CO.VALUE],
+            new_num / CO.TEN,
         )
 
     def __settings_speed_rate_spin(self, new_num):
         """change speed rate slider"""
-        self.slider_speed_rate.setProperty("value", new_num * C.TEN)
+        self.slider_speed_rate.setProperty("value", new_num * CO.TEN)
         setattr(
-            getattr(self.settings, C.SETTINGS_ATR[C.SPEED_RATE]),
-            C.SETTINGS_PARAM_ATR[C.VALUE],
+            getattr(self.settings, CO.SETTINGS_ATR[CO.SPEED_RATE]),
+            CO.SETTINGS_PARAM_ATR[CO.VALUE],
             new_num,
         )
+
+    def give_atr(self, atr):
+        param = getattr(self.settings, CO.SETTINGS_ATR[atr])
+        atr_descr = getattr(param, CO.SETTINGS_PARAM_ATR[CO.DESCRIPTION])
+        atr_range = getattr(param, CO.SETTINGS_PARAM_ATR[CO.RANGE])
+        return atr_descr, atr_range
+
+    def fix_param(self):
+        param = getattr(self.settings, CO.SETTINGS_ATR[CO.BLOCK_SIZE])
+        atr_value = int(getattr(param, CO.SETTINGS_PARAM_ATR[CO.VALUE]))
+        if atr_value % CO.DOUBLE == CO.ZERO:
+            atr_value += 1
+            self.slider_block_size.setProperty(
+                "value", (atr_value - CO.BS_START) / CO.DOUBLE
+            )
+            self.spin_block_size.setProperty("value", atr_value)
+            setattr(
+                getattr(self.settings, CO.SETTINGS_ATR[CO.BLOCK_SIZE]),
+                CO.SETTINGS_PARAM_ATR[CO.VALUE],
+                atr_value,
+            )
 
     def set_settings(self):
         """set init settings"""
         self.slider_block_size.setProperty(
             "value",
             getattr(
-                getattr(self.settings, C.SETTINGS_ATR[C.BLOCK_SIZE]), C.SETTINGS_PARAM_ATR[C.VALUE]
+                getattr(self.settings, CO.SETTINGS_ATR[CO.BLOCK_SIZE]),
+                CO.SETTINGS_PARAM_ATR[CO.VALUE],
             ),
         )
         self.spin_block_size.setProperty(
             "value",
-            getattr(
-                getattr(self.settings, C.SETTINGS_ATR[C.BLOCK_SIZE]), C.SETTINGS_PARAM_ATR[C.VALUE]
-            ),
+            (
+                getattr(
+                    getattr(self.settings, CO.SETTINGS_ATR[CO.BLOCK_SIZE]),
+                    CO.SETTINGS_PARAM_ATR[CO.VALUE],
+                )
+                - CO.BS_START
+            )
+            / CO.DOUBLE,
         )
         self.slider_max_thick.setProperty(
             "value",
             getattr(
-                getattr(self.settings, C.SETTINGS_ATR[C.MAX_THICKNESS]),
-                C.SETTINGS_PARAM_ATR[C.VALUE],
+                getattr(self.settings, CO.SETTINGS_ATR[CO.MAX_THICKNESS]),
+                CO.SETTINGS_PARAM_ATR[CO.VALUE],
             ),
         )
         self.spin_max_thick.setProperty(
             "value",
             getattr(
-                getattr(self.settings, C.SETTINGS_ATR[C.MAX_THICKNESS]),
-                C.SETTINGS_PARAM_ATR[C.VALUE],
+                getattr(self.settings, CO.SETTINGS_ATR[CO.MAX_THICKNESS]),
+                CO.SETTINGS_PARAM_ATR[CO.VALUE],
             ),
         )
         self.slider_min_line_len.setProperty(
             "value",
             getattr(
-                getattr(self.settings, C.SETTINGS_ATR[C.MIN_LINE_LENGTH]),
-                C.SETTINGS_PARAM_ATR[C.VALUE],
+                getattr(self.settings, CO.SETTINGS_ATR[CO.MIN_LINE_LENGTH]),
+                CO.SETTINGS_PARAM_ATR[CO.VALUE],
             ),
         )
         self.spin_min_line_len.setProperty(
             "value",
             getattr(
-                getattr(self.settings, C.SETTINGS_ATR[C.MIN_LINE_LENGTH]),
-                C.SETTINGS_PARAM_ATR[C.VALUE],
+                getattr(self.settings, CO.SETTINGS_ATR[CO.MIN_LINE_LENGTH]),
+                CO.SETTINGS_PARAM_ATR[CO.VALUE],
             ),
         )
         self.slider_min_radius.setProperty(
             "value",
             getattr(
-                getattr(self.settings, C.SETTINGS_ATR[C.MIN_RADIUS]), C.SETTINGS_PARAM_ATR[C.VALUE]
+                getattr(self.settings, CO.SETTINGS_ATR[CO.MIN_RADIUS]),
+                CO.SETTINGS_PARAM_ATR[CO.VALUE],
             ),
         )
         self.spin_min_radius.setProperty(
             "value",
             getattr(
-                getattr(self.settings, C.SETTINGS_ATR[C.MIN_RADIUS]), C.SETTINGS_PARAM_ATR[C.VALUE]
+                getattr(self.settings, CO.SETTINGS_ATR[CO.MIN_RADIUS]),
+                CO.SETTINGS_PARAM_ATR[CO.VALUE],
             ),
         )
         self.spin_speed_rate.setProperty(
             "value",
             getattr(
-                getattr(self.settings, C.SETTINGS_ATR[C.SPEED_RATE]), C.SETTINGS_PARAM_ATR[C.VALUE]
+                getattr(self.settings, CO.SETTINGS_ATR[CO.SPEED_RATE]),
+                CO.SETTINGS_PARAM_ATR[CO.VALUE],
             ),
         )
         self.slider_speed_rate.setProperty(
             "value",
             getattr(
-                getattr(self.settings, C.SETTINGS_ATR[C.SPEED_RATE]), C.SETTINGS_PARAM_ATR[C.VALUE]
+                getattr(self.settings, CO.SETTINGS_ATR[CO.SPEED_RATE]),
+                CO.SETTINGS_PARAM_ATR[CO.VALUE],
             )
-            * C.TEN,
+            * CO.TEN,
         )
 
+        atr_descr, atr_range = self.give_atr(CO.BLOCK_SIZE)
         self.box_block_size.setToolTip(
-            "Discription: %sRange: %s"
-            % (
-                getattr(
-                    getattr(self.settings, C.SETTINGS_ATR[C.BLOCK_SIZE]),
-                    C.SETTINGS_PARAM_ATR[C.DESCRIPTION],
-                ),
-                getattr(
-                    getattr(self.settings, C.SETTINGS_ATR[C.BLOCK_SIZE]),
-                    C.SETTINGS_PARAM_ATR[C.RANGE],
-                ),
-            )
+            f"Discription: <i>{atr_descr}</i>Range: <i>{atr_range}</i>"
         )
-        self.box_block_size.setToolTipDuration(C.TIME_TIP)
+        self.box_block_size.setToolTipDuration(CO.TIME_TIP)
+
+        atr_descr, atr_range = self.give_atr(CO.MIN_LINE_LENGTH)
         self.box_max_thick.setToolTip(
-            "Discription: %sRange: %s"
-            % (
-                getattr(
-                    getattr(self.settings, C.SETTINGS_ATR[C.MAX_THICKNESS]),
-                    C.SETTINGS_PARAM_ATR[C.DESCRIPTION],
-                ),
-                getattr(
-                    getattr(self.settings, C.SETTINGS_ATR[C.MAX_THICKNESS]),
-                    C.SETTINGS_PARAM_ATR[C.RANGE],
-                ),
-            )
+            f"Discription: <i>{atr_descr}</i>Range: <i>{atr_range}</i>"
         )
-        self.box_max_thick.setToolTipDuration(C.TIME_TIP)
+        self.box_max_thick.setToolTipDuration(CO.TIME_TIP)
+
+        atr_descr, atr_range = self.give_atr(CO.MAX_THICKNESS)
         self.box_min_line_len.setToolTip(
-            "Discription: %sRange: %s"
-            % (
-                getattr(
-                    getattr(self.settings, C.SETTINGS_ATR[C.MIN_LINE_LENGTH]),
-                    C.SETTINGS_PARAM_ATR[C.DESCRIPTION],
-                ),
-                getattr(
-                    getattr(self.settings, C.SETTINGS_ATR[C.MIN_LINE_LENGTH]),
-                    C.SETTINGS_PARAM_ATR[C.RANGE],
-                ),
-            )
+            f"Discription: <i>{atr_descr}</i>Range: <i>{atr_range}</i>"
         )
-        self.box_min_line_len.setToolTipDuration(C.TIME_TIP)
+        self.box_min_line_len.setToolTipDuration(CO.TIME_TIP)
+
+        atr_descr, atr_range = self.give_atr(CO.SPEED_RATE)
         self.box_min_radius.setToolTip(
-            "Discription: %sRange: %s"
-            % (
-                getattr(
-                    getattr(self.settings, C.SETTINGS_ATR[C.MIN_RADIUS]),
-                    C.SETTINGS_PARAM_ATR[C.DESCRIPTION],
-                ),
-                getattr(
-                    getattr(self.settings, C.SETTINGS_ATR[C.MIN_RADIUS]),
-                    C.SETTINGS_PARAM_ATR[C.RANGE],
-                ),
-            )
+            f"Discription: <i>{atr_descr}</i>Range: <i>{atr_range}</i>"
         )
-        self.box_min_radius.setToolTipDuration(C.TIME_TIP)
+        self.box_min_radius.setToolTipDuration(CO.TIME_TIP)
+
+        atr_descr, atr_range = self.give_atr(CO.MIN_RADIUS)
         self.box_speed_rate.setToolTip(
-            "Discription: %sRange: %s"
-            % (
-                getattr(
-                    getattr(self.settings, C.SETTINGS_ATR[C.SPEED_RATE]),
-                    C.SETTINGS_PARAM_ATR[C.DESCRIPTION],
-                ),
-                getattr(
-                    getattr(self.settings, C.SETTINGS_ATR[C.SPEED_RATE]),
-                    C.SETTINGS_PARAM_ATR[C.RANGE],
-                ),
-            )
+            f"Discription: <i>{atr_descr}</i>Range: <i>{atr_range}</i>"
         )
-        self.box_speed_rate.setToolTipDuration(C.TIME_TIP)
+        self.box_speed_rate.setToolTipDuration(CO.TIME_TIP)
 
 
 def main():

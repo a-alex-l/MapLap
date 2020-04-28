@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-import constant as C
+import constant as CO
 
 
 class UiMapLap:
@@ -27,7 +27,9 @@ class UiMapLap:
         )
         sizePolicy.setHorizontalStretch(100)
         sizePolicy.setVerticalStretch(100)
-        sizePolicy.setHeightForWidth(self.central_widget.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.central_widget.sizePolicy().hasHeightForWidth()
+        )
         self.central_widget.setSizePolicy(sizePolicy)
         self.central_widget.setMaximumSize(QtCore.QSize(screen_w, screen_h))
         self.central_widget.setFocusPolicy(QtCore.Qt.NoFocus)
@@ -87,14 +89,14 @@ class UiMapLap:
         self.pencil = QtWidgets.QPushButton(self.panel_tab)
         self.pencil.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(C.PENSIL), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(CO.PENSIL), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.pencil.setIcon(icon)
         self.pencil.setObjectName("pencil")
         self.painting.addWidget(self.pencil)
         self.eraser = QtWidgets.QPushButton(self.panel_tab)
         self.eraser.setText("")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap(C.ERASER), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon1.addPixmap(QtGui.QPixmap(CO.ERASER), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.eraser.setIcon(icon1)
         self.eraser.setObjectName("eraser")
         self.painting.addWidget(self.eraser)
@@ -143,7 +145,7 @@ class UiMapLap:
         self.spin_block_size.setKeyboardTracking(True)
         self.spin_block_size.setMinimum(11)
         self.spin_block_size.setMaximum(501)
-        self.spin_block_size.setSingleStep(1)
+        self.spin_block_size.setSingleStep(2)
         self.spin_block_size.setDisplayIntegerBase(10)
         self.spin_block_size.setObjectName("spin_block_size")
         self.horizontalLayout_6.addWidget(self.spin_block_size)
@@ -153,9 +155,9 @@ class UiMapLap:
         self.slider_block_size.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
         self.slider_block_size.setMouseTracking(False)
         self.slider_block_size.setStyleSheet("border: 0px;")
-        self.slider_block_size.setMinimum(11)
-        self.slider_block_size.setMaximum(501)
-        self.slider_block_size.setPageStep(5)
+        self.slider_block_size.setMinimum(0)
+        self.slider_block_size.setMaximum(245)
+        self.slider_block_size.setPageStep(1)
         self.slider_block_size.setOrientation(QtCore.Qt.Horizontal)
         self.slider_block_size.setInvertedAppearance(False)
         self.slider_block_size.setInvertedControls(False)
@@ -333,5 +335,6 @@ class UiMapLap:
         self.box_speed_rate.setTitle(_translate("MapLap", "&Speed rate"))
         self.box_min_radius.setTitle(_translate("MapLap", "&Min radius"))
         self.panel_settings.setTabText(
-            self.panel_settings.indexOf(self.settings_tab), _translate("MapLap", "settings")
+            self.panel_settings.indexOf(self.settings_tab),
+            _translate("MapLap", "settings"),
         )
