@@ -4,7 +4,7 @@ threshold_line 50
 min_line_length 20
 max_line_gap 5
 is_circle 0.75
-max_thickness 30
+max_thickness 50
 speed_rate 1.0
 threshold_center 30
 min_radius 5

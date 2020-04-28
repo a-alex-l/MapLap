@@ -86,7 +86,12 @@ class CircleDetector:
     def update_settings(self, settings: SettingsParams):
         self.__init__(settings)
 
-    def _find_right_center_and_radius(self, gray_image: np.ndarray, circle: Circle):
+    def _find_right_center_and_radius(
+            self,
+            gray_image: np.ndarray,
+            circle: Circle,
+            center_gap: int = 3
+    ):
         count_non_zero_now = circle.count_intersections(gray_image, self.speed_rate)
         moves = (
             (0.5, 0.5),
@@ -99,7 +104,7 @@ class CircleDetector:
             (0, -0.5)
         )
         for move in moves:
-            for _ in range(0, self.max_thickness):
+            for _ in range(0, center_gap):
                 circle.center.x_coord = circle.center.x_coord + move[0]
                 circle.center.y_coord = circle.center.y_coord + move[1]
                 count_non_zero_move = circle.count_intersections(
@@ -138,9 +143,15 @@ class CircleDetector:
         if centers is not None:
             circles: list = []
             if centers is not None:
-                for center in centers[0, :]:
+                for center in centers[0, :1000]:
                     x_center, y_center, radius = center
-                    circles.append(Circle(Point(x_center, y_center), radius, 1.0))
+                    circle = Circle(Point(x_center, y_center), radius, 1.0)
+                    self.speed_rate = self.speed_rate * radius / 5
+                    if (circle.count_intersections(gray_image, self.speed_rate)
+                            > self.is_circle * np.pi * circle.radius):
+                        self._find_right_center_and_radius(gray_image, circle)
+                        circles.append(circle)
+                    self.speed_rate = self.speed_rate / (radius / 5)
             return circles
         return []
 
@@ -151,12 +162,9 @@ class CircleDetector:
         centers.sort()
         for center in centers:
             if (center.count_intersections(gray_image, self.speed_rate)
-                    > self.is_circle * 1.5 * np.pi * center.radius):
-                self._find_right_center_and_radius(gray_image, center)
-            if (center.count_intersections(gray_image, self.speed_rate)
                     > self.is_circle * 2 * np.pi * center.radius):
+                self._find_right_center_and_radius(gray_image, center, self.max_thickness)
                 center.find_line_width(gray_image, self.is_circle, self.speed_rate)
-                print("Circle found", center)
                 for center_delete in centers:
                     if (
                             math.hypot(
@@ -209,21 +217,11 @@ class Detector:
         cv2.imwrite(file_path, image)
 
     def detect(self, file_path: str) -> List[Line] and List[Circle]:
-        from datetime import datetime
-        t_start = datetime.now()
         input_image = cv2.imread(file_path)
         gray_image = self.contrast.get_black_white_image(input_image)
         canny_image = cv2.Canny(gray_image, 100, 50)
         lines = self.detector_lines.detect_lines_without_width(canny_image)
-        print(len(lines))
         circles_centers = self.detector_circles.detect_centers_of_circles(gray_image)
-        print(len(circles_centers))
-        t_end = datetime.now()
-        print("Time", t_end - t_start)
         circles = self.detector_circles.clarify_circles(gray_image, circles_centers)
-        t_end = datetime.now()
-        print("Time", t_end - t_start)
         self._show_finds(file_path, lines, circles)
-        t_end = datetime.now()
-        print("Time", t_end - t_start)
         return lines, circles
