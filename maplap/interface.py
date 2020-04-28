@@ -538,25 +538,25 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         )
         self.box_block_size.setToolTipDuration(CO.TIME_TIP)
 
-        atr_descr, atr_range = self.give_atr(CO.MIN_LINE_LENGTH)
+        atr_descr, atr_range = self.give_atr(CO.MAX_THICKNESS)
         self.box_max_thick.setToolTip(
             f"Discription: <i>{atr_descr}</i>Range: <i>{atr_range}</i>"
         )
         self.box_max_thick.setToolTipDuration(CO.TIME_TIP)
 
-        atr_descr, atr_range = self.give_atr(CO.MAX_THICKNESS)
+        atr_descr, atr_range = self.give_atr(CO.MIN_LINE_LENGTH)
         self.box_min_line_len.setToolTip(
             f"Discription: <i>{atr_descr}</i>Range: <i>{atr_range}</i>"
         )
         self.box_min_line_len.setToolTipDuration(CO.TIME_TIP)
 
-        atr_descr, atr_range = self.give_atr(CO.SPEED_RATE)
+        atr_descr, atr_range = self.give_atr(CO.MIN_RADIUS)
         self.box_min_radius.setToolTip(
             f"Discription: <i>{atr_descr}</i>Range: <i>{atr_range}</i>"
         )
         self.box_min_radius.setToolTipDuration(CO.TIME_TIP)
 
-        atr_descr, atr_range = self.give_atr(CO.MIN_RADIUS)
+        atr_descr, atr_range = self.give_atr(CO.SPEED_RATE)
         self.box_speed_rate.setToolTip(
             f"Discription: <i>{atr_descr}</i>Range: <i>{atr_range}</i>"
         )
