@@ -101,9 +101,9 @@ class UiMapLap:
         self.eraser.setObjectName("eraser")
         self.painting.addWidget(self.eraser)
         self.verticalLayout_2.addLayout(self.painting)
-        self.cropping = QtWidgets.QPushButton(self.panel_tab)
-        self.cropping.setObjectName("cropping")
-        self.verticalLayout_2.addWidget(self.cropping)
+        self.detect = QtWidgets.QPushButton(self.panel_tab)
+        self.detect.setObjectName("detect")
+        self.verticalLayout_2.addWidget(self.detect)
         self.select_area = QtWidgets.QPushButton(self.panel_tab)
         self.select_area.setObjectName("select_area")
         self.verticalLayout_2.addWidget(self.select_area)
@@ -320,7 +320,7 @@ class UiMapLap:
         """init some"""
         _translate = QtCore.QCoreApplication.translate
         MapLap.setWindowTitle(_translate("MapLap", "MapLap"))
-        self.cropping.setText(_translate("MapLap", "cropping"))
+        self.detect.setText(_translate("MapLap", "detect"))
         self.select_area.setText(_translate("MapLap", "select area"))
         self.choose_file.setText(_translate("MapLap", "choose file"))
         self.save_tex.setText(_translate("MapLap", "save tex"))

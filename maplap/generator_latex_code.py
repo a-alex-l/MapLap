@@ -21,17 +21,17 @@ def generator_latex_code(list_of_lines_and_circles) -> Document:
                     "radius": str(i.radius),
                     "scale": "0.15",
                 }
-                center = TikZCoordinate(i.center.x_coordinate, i.center.y_coordinate)
+                center = TikZCoordinate(i.center.x_coord, i.center.y_coord)
                 pic.append(
                     TikZDraw([center, "circle"], options=TikZOptions(**node_kwargs))
                 )
             elif isinstance(i, Line):
                 node_kwargs = {"line width": str(i.line_width) + "pt", "scale": "0.15"}
                 first = TikZCoordinate(
-                    i.point_first.x_coordinate, i.point_first.y_coordinate
+                    i.start.x_coord, i.start.y_coord
                 )
                 second = TikZCoordinate(
-                    i.point_second.x_coordinate, i.point_second.y_coordinate
+                    i.end.x_coord, i.end.y_coord
                 )
                 pic.append(
                     TikZDraw([first, "--", second], options=TikZOptions(**node_kwargs))

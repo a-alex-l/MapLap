@@ -8,6 +8,7 @@ from design import UiMapLap
 from settings import Settings, SettingsParams
 from geometry import Rectangle
 import detector
+import generator_latex_code as gen
 
 
 class MainWindow(QtWidgets.QMainWindow, UiMapLap):
@@ -33,7 +34,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
     def __init__(self, screen_w, screen_h):
         super().__init__()
         self.setupUi(self, screen_w, screen_h)
-        self.cropping.clicked.connect(self.__cropping)
+        self.detect.clicked.connect(self.__detect)
         self.select_area.clicked.connect(self.__select_area)
         self.choose_file.clicked.connect(self.__choose_file)
         self.save_tex.clicked.connect(self.__save_tex)
@@ -71,19 +72,16 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
 
     def __save_tex(self):
         """changing, save ..."""
-        print(self.lines)
-        print(self.circles)
-        self.resize_window()  # doesn't do anything yet
+        gen.generator_latex_tex(self.circles + self.lines, CO.TEX_RES)
         ##
 
     def __save_pdf(self):
         """saving pdf"""
-        self.picture_in.pixmap().save(
-            "maplap/templates/temp.pdf", "PDF"
-        )  # it doesn't seem to work
+        gen.generator_latex_pdf(self.circles + self.lines, CO.PDF_RES)
+        # it doesn't seem to work
         ##
 
-    def __cropping(self):
+    def __detect(self):
         """run the algorithm and display the picture"""
         self.fix_param()
         self.settings.save_settings()
@@ -99,7 +97,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.resize_window()
         self.picture = CO.TEMP
         self.save_image()
-        self.__cropping()
+        self.__detect()
         self.resize_window()
 
     def save_image(self, is_picture_in=True, file_format=CO.FORMAT):
@@ -246,7 +244,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
                 self.resize_window()
         elif event.key() == QtCore.Qt.Key_F5:
             self.resizeEvent(CO.UPDATE)
-            self.__cropping()
+            self.__detect()
         elif event.key() == QtCore.Qt.Key_F4:
             self.__rotate()
         elif event.modifiers():
