@@ -72,12 +72,14 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
 
     def __save_tex(self):
         """changing, save ..."""
-        gen.generator_latex_tex(self.circles + self.lines, CO.TEX_RES)
+        g = gen.GeneratorLatexCode(self.circles + self.lines)
+        g.generator_latex_tex(CO.TEX_RES)
+#        generator_latex_tex(CO.TEX_RES)
         ##
 
     def __save_pdf(self):
         """saving pdf"""
-        gen.generator_latex_pdf(self.circles + self.lines, CO.PDF_RES)
+        gen.GeneratorLatexCode(self.circles + self.lines).generator_latex_pdf(CO.PDF_RES)
         # it doesn't seem to work
         ##
 
