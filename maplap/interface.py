@@ -7,29 +7,13 @@ import constant as CO
 from design import UiMapLap
 from settings import Settings, SettingsParams
 from geometry import Rectangle
+from math import sqrt
 import detector
 import generator_latex_code as gen
 
 
 class MainWindow(QtWidgets.QMainWindow, UiMapLap):
     """Main window"""
-
-    # pylint: disable=R0902
-    # 9/7 attributes - I will fix it later
-
-    # but how fix:
-
-    # pylint: disable=W0212
-    # it is unclear how else to write _pixmap
-
-    # pylint: disable=C0103
-    # is it better to rewrite the originally defined methods like resizeEvent?
-
-    # pylint: disable=W0613
-    # event in resizeEvent and other
-
-    # pylint: disable=R0912
-    # many branches in keyPressEvent
 
     def __init__(self, screen_w, screen_h):
         super().__init__()
@@ -42,6 +26,8 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.rotate.clicked.connect(self.__rotate)
         self.pencil.clicked.connect(self.__pencil)
         self.eraser.clicked.connect(self.__eraser)
+        self.lineI.clicked.connect(self.__line)
+        self.circleI.clicked.connect(self.__circle)
         self.spin_block_size.valueChanged.connect(self.__settings_block_size_spin)
         self.slider_block_size.valueChanged.connect(self.__settings_block_size_slider)
         self.spin_max_thick.valueChanged.connect(self.__settings_max_thick)
@@ -59,6 +45,8 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.picture_factor = CO.INIT_FACTOR
         self.action = "no"
         self.area = Rectangle()
+        self.line = Rectangle()
+        self.circle = Rectangle()
         self.need_update = False
         self.is_area_up = False
         self.picture_in.mouseMoveEvent = self.do_nothing
@@ -72,14 +60,17 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
 
     def __save_tex(self):
         """changing, save ..."""
-        gen.generator_latex_tex(self.circles + self.lines, CO.TEX_RES)
-        ##
+        dialog = QtWidgets.QFileDialog(self)
+        file_out = dialog.getSaveFileName(self, CO.OPEN, "", CO.TEMPLATE_TEX)
+        if file_out[0] != "":
+            gen.generator_latex_tex(self.circles + self.lines, file_out[0])
 
     def __save_pdf(self):
         """saving pdf"""
-        gen.generator_latex_pdf(self.circles + self.lines, CO.PDF_RES)
-        # it doesn't seem to work
-        ##
+        dialog = QtWidgets.QFileDialog(self)
+        file_out = dialog.getSaveFileName(self, CO.OPEN, "", CO.TEMPLATE_PDF)
+        if file_out[0] != "":
+            gen.generator_latex_pdf(self.circles + self.lines, file_out[0])
 
     def __detect(self):
         """run the algorithm and display the picture"""
@@ -90,7 +81,6 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         detect = detector.Detector(self.settings)
         self.lines, self.circles = detect.detect(self.picture_res)
         self.update_image()
-        ##
 
     def init_picture(self):
         """initial installation of the picture"""
@@ -117,7 +107,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         pixmap_res = pixmap_res.transformed(QtGui.QTransform().rotate(self.angle[1]))
         width_some = CO.DOUBLE * CO.SIZE_LINE + CO.SIZE_PANEL
         width_pixmap_res = pixmap_res.width() * pixmap.height() / pixmap_res.height()
-        new_width = pixmap.width() + width_pixmap_res  #
+        new_width = pixmap.width() + width_pixmap_res
         self.setMinimumSize(
             QtCore.QSize(new_width / pixmap.height() * CO.MIN_H + width_some, CO.MIN_H)
         )
@@ -181,6 +171,24 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             self.picture_in.mouseMoveEvent = self.draw
             self.picture_in.mousePressEvent = self.set_point
             self.picture_in.mouseReleaseEvent = self.end_path
+            self.resizeEvent(CO.UPDATE)
+        elif mode == "line":
+            self.select_area.setText("select area")
+            self.picture_in.setProperty(
+                "cursor", QtGui.QCursor(QtCore.Qt.PointingHandCursor)
+            )
+            self.picture_in.mouseMoveEvent = self.move_line
+            self.picture_in.mousePressEvent = self.draw_line
+            self.picture_in.mouseReleaseEvent = self.end_line
+            self.resizeEvent(CO.UPDATE)
+        elif mode == "circle":
+            self.select_area.setText("select area")
+            self.picture_in.setProperty(
+                "cursor", QtGui.QCursor(QtCore.Qt.PointingHandCursor)
+            )
+            self.picture_in.mouseMoveEvent = self.move_circle
+            self.picture_in.mousePressEvent = self.draw_circle
+            self.picture_in.mouseReleaseEvent = self.end_circle
             self.resizeEvent(CO.UPDATE)
         else:
             print("error in change_action")
@@ -300,22 +308,18 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             self.area.y_end = event.y() + CO.CURSOR
 
     def paintEvent(self, event):
-        """draws an area selection window"""
-        if self.action == "select" and self.need_update:
-            self.need_update = False
+        """draws at window"""
+        if self.need_update and (self.action == "line"
+                                 or self.action == "circle"
+                                 or self.action == "select"):
+            self.need_update = False    
             self.update_image()
             paint = QtGui.QPainter()
             paint.begin(self.picture_in.pixmap())
-            paint.setOpacity(CO.OPACITY_AREA)
-            paint.setBrush(QtGui.QBrush(QtCore.Qt.blue))
-            paint.drawRect(
-                self.area.x_start,
-                self.area.y_start,
-                self.area.x_end - self.area.x_start,
-                self.area.y_end - self.area.y_start,
-            )
+            self.draw_some(paint)
             paint.end()
-            self.is_area_up = True
+            if self.action == "select":
+                self.is_area_up = True
 
     def __pencil(self):
         """sets the drawing activity"""
@@ -331,6 +335,20 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         else:
             self.change_action("eraser")
 
+    def __line(self):
+        """sets the activity on the wipe"""
+        if self.action == "line":
+            self.change_action("no")
+        else:
+            self.change_action("line")
+
+    def __circle(self):
+        """sets the activity on the wipe"""
+        if self.action == "circle":
+            self.change_action("no")
+        else:
+            self.change_action("circle")
+
     def set_point(self, event):
         """sets the start point for drawing"""
         self.path.moveTo(event.pos())
@@ -339,8 +357,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         """draw event on image"""
         self.path.lineTo(event.pos())
         draw = Qt.QPainter(self.picture_in.pixmap())
-        draw.setPen(self.set_pen())
-        draw.drawPath(self.path)
+        self.draw_some(draw)
         self.picture_in.update()
 
     def end_path(self, event):
@@ -363,9 +380,103 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
 
     def set_pen(self, delete=False):
         """sets the desired pen"""
-        if self.action == "pencil" and not delete:
+        if self.action in ["pencil", "line", "circle"] and not delete:
             return Qt.QPen(QtCore.Qt.black, CO.BLACK_W)
+        elif self.action == "select":
+            return Qt.QPen(QtCore.Qt.white)
         return Qt.QPen(QtCore.Qt.white, CO.WHITE_W)
+
+    def move_line(self, event):
+        """move event in line"""
+        if self.action == "line":
+            self.need_update = True
+            self.line.x_end = event.x()
+            self.line.y_end = event.y() + CO.CURSOR
+            self.picture_in.update()
+
+    def draw_line(self, event):
+        """start event in line"""
+        if self.action == "line":
+            self.resizeEvent(CO.UPDATE)
+            self.line.x_start = event.x()
+            self.line.y_start = event.y() + CO.CURSOR
+
+    def end_line(self, event):
+        """end event in line"""
+        if self.action == "line":
+            self.line.x_end = event.x()
+            self.line.y_end = event.y() + CO.CURSOR
+            self.update_image()
+            draw = Qt.QPainter(self.picture_in.pixmap())
+            self.draw_some(draw)
+            draw.end()
+            self.picture_in.update()
+            self.save_image()
+            self.update_image()
+
+    def move_circle(self, event):
+        """move event in circle"""
+        if self.action == "circle":
+            self.need_update = True
+            self.circle.x_end = event.x()
+            self.circle.y_end = event.y() + CO.CURSOR
+            self.picture_in.update()
+
+    def draw_circle(self, event):
+        """start event in circle"""
+        if self.action == "circle":
+            self.resizeEvent(CO.UPDATE)
+            self.circle.x_start = event.x()
+            self.circle.y_start = event.y() + CO.CURSOR
+
+    def end_circle(self, event):
+        """end event in circle"""
+        if self.action == "circle":
+            self.circle.x_end = event.x()
+            self.circle.y_end = event.y() + CO.CURSOR
+            self.update_image()
+            draw = Qt.QPainter(self.picture_in.pixmap())
+            self.draw_some(draw)
+            draw.end()
+            self.picture_in.update()
+            self.save_image()
+            self.update_image()
+
+    def draw_some(self, draw):
+        """draw all, that can be drawn"""
+        draw.setPen(self.set_pen())
+        if self.action == "pencil" or self.action == "eraser":
+            draw.drawPath(self.path)
+        elif self.action == "select":
+            draw.setOpacity(CO.OPACITY_AREA)
+            draw.setBrush(QtGui.QBrush(QtCore.Qt.blue))
+            draw.drawRect(
+                self.area.x_start,
+                self.area.y_start,
+                self.area.x_end - self.area.x_start,
+                self.area.y_end - self.area.y_start,
+            )
+        elif self.action == "line":
+            draw.drawLine(
+                    self.line.x_start,
+                    self.line.y_start,
+                    self.line.x_end,
+                    self.line.y_end
+            )
+        elif self.action == "circle":
+            leng = lambda x1, y1, x2, y2: sqrt((x1 - x2)**2 + (y1 - y2)**2)
+            radius = leng(
+                self.circle.x_start, 
+                self.circle.y_start, 
+                self.circle.x_end,
+                self.circle.y_end)
+            draw.drawEllipse(
+                Qt.QPoint(
+                    self.circle.x_start,
+                    self.circle.y_start),
+                radius,
+                radius
+            )
 
     def __settings_block_size_slider(self, new_num):
         """change block size everywhere"""
