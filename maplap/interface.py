@@ -63,14 +63,14 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         dialog = QtWidgets.QFileDialog(self)
         file_out = dialog.getSaveFileName(self, CO.OPEN, "", CO.TEMPLATE_TEX)
         if file_out[0] != "":
-            gen.generator_latex_tex(self.circles + self.lines, file_out[0])
+            gen.GeneratorLatexCode(self.circles + self.lines).generator_latex_tex(file_out[0])
 
     def __save_pdf(self):
         """saving pdf"""
         dialog = QtWidgets.QFileDialog(self)
         file_out = dialog.getSaveFileName(self, CO.OPEN, "", CO.TEMPLATE_PDF)
         if file_out[0] != "":
-            gen.generator_latex_pdf(self.circles + self.lines, file_out[0])
+            gen.GeneratorLatexCode(self.circles + self.lines).generator_latex_pdf(file_out[0])
 
     def __detect(self):
         """run the algorithm and display the picture"""
