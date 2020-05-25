@@ -1,5 +1,6 @@
 """constant file"""
 
+
 START_PICTURE = "templates/MapLap2.png"
 TEMP = "templates/temp.png"
 DRAG_AREA = "templates/drag_area.png"
