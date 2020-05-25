@@ -2,6 +2,7 @@
 
 START_PICTURE = "templates/MapLap2.png"
 TEMP = "templates/temp.png"
+DRAG_AREA = "templates/drag_area.png"
 RES = "templates/MapLap_res.png"
 PENSIL = "templates/pensil.png"
 ERASER = "templates/eraser.png"
@@ -12,7 +13,7 @@ DEFAULT_SETTINGS = "templates/default_settigs.txt"
 OPEN = "Open"
 FORMAT = "PNG"
 SIZE_PANEL = 140
-SIZE_LINE = 25
+SIZE_LINE = 24
 BORDER = 9
 ROTATE = 90
 FULL_ROTATE = 360

@@ -6,12 +6,6 @@ import constant as CO
 class UiMapLap:
     """Main window ui"""
 
-    # pylint: disable=R0902
-    # pylint: disable=C0103
-    # snake_case
-    # pylint: disable=R0915
-    # pylint: disable=W0201
-    # without this there is no way
     def setupUi(self, MapLap, screen_w, screen_h):
         """initial set up"""
         MapLap.setObjectName("MapLap")

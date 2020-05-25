@@ -12,6 +12,29 @@ import detector
 import generator_latex_code as gen
 
 
+class DragArea(QtWidgets.QLabel):
+    """Drag label"""
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        pixmap = QtGui.QPixmap(CO.DRAG_AREA)
+        self.setPixmap(pixmap)
+
+    def mouseMoveEvent(self, event):
+        mimeData = QtCore.QMimeData()
+        drag = QtGui.QDrag(self)
+        mimeData.setImageData(self.pixmap().toImage())
+        drag.setHotSpot(event.pos())
+        drag.setMimeData(mimeData)
+
+        pixmap = QtGui.QPixmap(self.size())
+        paint = QtGui.QPainter(pixmap)
+        paint.drawPixmap(self.rect(), self.grab())
+        paint.end()
+        drag.setPixmap(pixmap)
+        drag.exec_(QtCore.Qt.MoveAction)
+
+
 class MainWindow(QtWidgets.QMainWindow, UiMapLap):
     """Main window"""
 
@@ -49,6 +72,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.circle = Rectangle()
         self.need_update = False
         self.is_area_up = False
+        self.no_drag_area = True
         self.picture_in.mouseMoveEvent = self.do_nothing
         self.picture_in.mousePressEvent = self.do_nothing
         self.picture_in.mouseReleaseEvent = self.do_nothing
@@ -63,14 +87,18 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         dialog = QtWidgets.QFileDialog(self)
         file_out = dialog.getSaveFileName(self, CO.OPEN, "", CO.TEMPLATE_TEX)
         if file_out[0] != "":
-            gen.GeneratorLatexCode(self.circles + self.lines).generator_latex_tex(file_out[0])
+            gen.GeneratorLatexCode(self.circles + self.lines).generator_latex_tex(
+                file_out[0]
+            )
 
     def __save_pdf(self):
         """saving pdf"""
         dialog = QtWidgets.QFileDialog(self)
         file_out = dialog.getSaveFileName(self, CO.OPEN, "", CO.TEMPLATE_PDF)
         if file_out[0] != "":
-            gen.GeneratorLatexCode(self.circles + self.lines).generator_latex_pdf(file_out[0])
+            gen.GeneratorLatexCode(self.circles + self.lines).generator_latex_pdf(
+                file_out[0]
+            )
 
     def __detect(self):
         """run the algorithm and display the picture"""
@@ -243,6 +271,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
                 self.picture_in.setPixmap(copy)
                 self.save_image()
                 self.resize_window()
+                self.area = Rectangle()
         if event.key() == QtCore.Qt.Key_Backspace:
             if self.is_area_up:
                 self.resizeEvent(CO.UPDATE)
@@ -262,6 +291,12 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
                 self.move(self.pos().x() + CO.STEP, self.pos().y())
             elif event.key() == QtCore.Qt.Key_Escape:
                 sys.exit(0)
+            elif event.key() == QtCore.Qt.Key_Return:
+                if self.action == "select":
+                    self.drag_draw()
+                    self.save_image()
+                    self.clear_drag()
+                    self.resize_window()
         else:
             if event.key() == QtCore.Qt.Key_Up:
                 self.move(self.pos().x(), self.pos().y() - CO.STEP)
@@ -286,12 +321,60 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         """empty link (is used)"""
         self.action = self.action
 
+    def mouse_drag_release(self, event):
+        self.clear_drag()
+        self.area.x_start = event.pos().x()
+        self.area.y_start = event.pos().y()
+
+    def clear_drag(self):
+        self.no_drag_area = True
+        self.drag_area.setVisible(False)
+        self.area = Rectangle()
+        self.picture_in.mouseMoveEvent = self.mouse_move_event_select
+        self.picture_in.mousePressEvent = self.mouse_press_event_select
+        self.picture_in.mouseReleaseEvent = self.mouse_release_event_select
+
+    def dragging(self, event):
+        self.check_area_coord()
+        self.resizeEvent(CO.UPDATE)
+        x_del = self.area.x_end - self.area.x_start
+        y_del = self.area.y_end - self.area.y_start
+        copy = self.picture_in.pixmap().copy(
+            self.area.x_start, self.area.y_start, x_del, y_del,
+        )
+        copy.save(CO.DRAG_AREA, CO.FORMAT)
+        self.setAcceptDrops(True)
+        self.is_drag_area = False
+        self.drag_area = DragArea(self)
+        self.drag_area.resize(x_del, y_del)
+
+        self.gridLayout.addWidget(self.drag_area)
+        self.gridLayout.removeWidget(self.drag_area)
+        self.drag_area.move(
+            self.area.x_start + self.picture_in.pos().x(), self.area.y_start
+        )
+
+        self.picture_in.mouseMoveEvent = self.drag_area.mouseMoveEvent
+        self.picture_in.mousePressEvent = self.mouse_drag_release
+        self.picture_in.mouseReleaseEvent = self.do_nothing
+
     def mouse_press_event_select(self, event):
         """press event in select"""
         if self.action == "select":
-            self.resizeEvent(CO.UPDATE)
-            self.area.x_start = event.x()
-            self.area.y_start = event.y() + CO.CURSOR
+            self.end = False
+            x_st = event.x()
+            y_st = event.y() + CO.CURSOR
+            inn = (
+                lambda x, y, area: (x - area.x_start) * (x - area.x_end) < 0
+                and (y - area.y_start) * (y - area.y_end) < 0
+            )
+            if inn(x_st, y_st, self.area) and self.no_drag_area:
+                self.no_drag_area = False
+                self.dragging(event)
+            else:
+                self.resizeEvent(CO.UPDATE)
+                self.area.x_start = x_st
+                self.area.y_start = y_st
 
     def mouse_move_event_select(self, event):
         """move event in select"""
@@ -309,10 +392,10 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
 
     def paintEvent(self, event):
         """draws at window"""
-        if self.need_update and (self.action == "line"
-                                 or self.action == "circle"
-                                 or self.action == "select"):
-            self.need_update = False    
+        if self.need_update and (
+            self.action == "line" or self.action == "circle" or self.action == "select"
+        ):
+            self.need_update = False
             self.update_image()
             paint = QtGui.QPainter()
             paint.begin(self.picture_in.pixmap())
@@ -377,6 +460,13 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             self.area.x_end - self.area.x_start,
             self.area.y_end - self.area.y_start,
         )
+        self.area = Rectangle()
+
+    def drag_draw(self):
+        draw = Qt.QPainter(self.picture_in.pixmap())
+        x = self.drag_area.x() - self.picture_in.pos().x()
+        y = self.drag_area.y()
+        draw.drawPixmap(x, y, QtGui.QPixmap(CO.DRAG_AREA))
 
     def set_pen(self, delete=False):
         """sets the desired pen"""
@@ -458,24 +548,18 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             )
         elif self.action == "line":
             draw.drawLine(
-                    self.line.x_start,
-                    self.line.y_start,
-                    self.line.x_end,
-                    self.line.y_end
+                self.line.x_start, self.line.y_start, self.line.x_end, self.line.y_end
             )
         elif self.action == "circle":
-            leng = lambda x1, y1, x2, y2: sqrt((x1 - x2)**2 + (y1 - y2)**2)
+            leng = lambda x1, y1, x2, y2: sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
             radius = leng(
-                self.circle.x_start, 
-                self.circle.y_start, 
+                self.circle.x_start,
+                self.circle.y_start,
                 self.circle.x_end,
-                self.circle.y_end)
+                self.circle.y_end,
+            )
             draw.drawEllipse(
-                Qt.QPoint(
-                    self.circle.x_start,
-                    self.circle.y_start),
-                radius,
-                radius
+                Qt.QPoint(self.circle.x_start, self.circle.y_start), radius, radius
             )
 
     def __settings_block_size_slider(self, new_num):
@@ -672,6 +756,19 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             f"Discription: <i>{atr_descr}</i>Range: <i>{atr_range}</i>"
         )
         self.box_speed_rate.setToolTipDuration(CO.TIME_TIP)
+
+    def dragEnterEvent(self, event):
+        if not self.is_drag_area:
+            self.pos = self.drag_area.pos()
+            self.start_pos = event.pos()
+            self.is_drag_area = True
+        event.accept()
+
+    def dropEvent(self, event):
+        self.drag_area.move(event.pos() - self.start_pos + self.pos)
+        self.is_drag_area = False
+        event.setDropAction(QtCore.Qt.MoveAction)
+        event.accept()
 
 
 def main():
