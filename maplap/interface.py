@@ -344,6 +344,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.action = self.action
 
     def mouse_drag_release(self, event):
+        self.picture_in.mouseMoveEvent = self.drag_area.mouseMoveEvent
         self.clear_drag()
         self.area.x_start = event.pos().x()
         self.area.y_start = event.pos().y()
@@ -381,7 +382,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             self.area.x_start + self.picture_in.pos().x(), self.area.y_start
         )
 
-        self.picture_in.mouseMoveEvent = self.drag_area.mouseMoveEvent
+        self.picture_in.mouseMoveEvent = self.do_nothing
         self.picture_in.mousePressEvent = self.mouse_drag_release
         self.picture_in.mouseReleaseEvent = self.do_nothing
 
