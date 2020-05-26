@@ -65,6 +65,14 @@ class LineDetector:
                 )
         return lines
 
+    def lines_extension(self, lines: List[Line], gray_image: np.ndarray) -> List[Line]:
+        lines.sort()
+        for line in lines:
+            line.sprawl_start(gray_image, self.speed_rate)
+            line.swap()
+            line.sprawl_start(gray_image, self.speed_rate)
+        return lines
+
 
 class CircleDetector:
     is_circle: float
@@ -200,28 +208,50 @@ class Detector:
         self.detector_lines = LineDetector(settings)
         self.detector_circles = CircleDetector(settings)
 
-    def _show_finds(self, file_path: str, lines: list, circles: list):
-        input_image = cv2.imread(file_path)
-        image = 255 * np.ones(input_image.shape, input_image.dtype)
-        if lines:
-            for line in lines:
-                cv2.line(image, (line.start.x_coord, line.start.y_coord),
-                         (line.end.x_coord, line.end.y_coord),
-                         (0, 0, 0), line.line_width)
+    def _get_finds(self, lines: list, circles: list, input_image):
+        image: cv2.UMat = input_image.copy()
         if circles:
             for circle in circles:
                 cv2.circle(image, (int(round(circle.center.x_coord)),
                                    int(round(circle.center.y_coord))),
                            int(round(circle.radius + circle.line_width / 2)),
-                           (0, 0, 0), int(round(circle.line_width)))
+                           (0, 255, 0), int(round(circle.line_width)))
+        if lines:
+            for line in lines:
+                cv2.line(image, (int(round(line.start.x_coord)), int(round(line.start.y_coord))),
+                         (int(round(line.end.x_coord)), int(round(line.end.y_coord))),
+                         (0, 0, 255), line.line_width)
+        return image
+
+    def _show_finds(self, file_path: str, lines: list, circles: list):
+        input_image = cv2.imread(file_path)
+        image = self._get_finds(lines, circles, 255 * np.ones(input_image.shape, input_image.dtype))
         cv2.imwrite(file_path, image)
+
+    def normal_canny(self,  gray_image: np.ndarray) -> np.ndarray:
+        canny_image = gray_image.copy()
+        for i in range(1, gray_image.shape[0] - 1):
+            for j in range(1, gray_image.shape[1] - 1):
+                if (gray_image[i][j + 1] != 0 and gray_image[i][j - 1] != 0 and
+                   gray_image[i + 1][j] != 0 and gray_image[i - 1][j] != 0 and
+                   gray_image[i][j] != 0):
+                    canny_image[i][j] = 0
+        return canny_image
 
     def detect(self, file_path: str) -> List[Line] and List[Circle]:
         input_image = cv2.imread(file_path)
         gray_image = self.contrast.get_black_white_image(input_image)
-        canny_image = cv2.Canny(gray_image, 100, 50)
-        lines = self.detector_lines.detect_lines_without_width(canny_image)
+
         circles_centers = self.detector_circles.detect_centers_of_circles(gray_image)
         circles = self.detector_circles.clarify_circles(gray_image, circles_centers)
+
+        canny_image = self.normal_canny(gray_image)
+        lines_preform = self.detector_lines.detect_lines_without_width(canny_image)
+        cv2.imshow("before", self._get_finds(lines_preform, circles, input_image))
+        lines = self.detector_lines.lines_extension(lines_preform, gray_image)
+
+        cv2.imshow("canny", canny_image)
+        cv2.imshow("after", self._get_finds(lines, circles, input_image))
+
         self._show_finds(file_path, lines, circles)
         return lines, circles
