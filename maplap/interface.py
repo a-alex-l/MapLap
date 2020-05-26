@@ -263,15 +263,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         detect = detector.Detector(self.settings)
         lines, circles = detect.detect(CO.DRAG_AREA)
 
-        #change!!!
-
-        
-        # dialog = QtWidgets.QFileDialog(self)
-        # file_out = dialog.getSaveFileName(self, CO.OPEN, "", CO.TEMPLATE_PDF)
-        # if file_out[0] != "":
-        #     gen.GeneratorLatexCode(circles + lines).generator_latex_pdf(
-        #         file_out[0]
-        #     )
+        gen.GeneratorLatexCode(circles + lines).generator_one_picture_in_buffer()
 
     def keyPressEvent(self, event):
         """keyboard click events"""
@@ -319,8 +311,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
                     self.give_part_picture()
                     self.area = Rectangle()
             elif event.key() == QtCore.Qt.Key_D:
-                #change!!!
-                pass
+                gen.GeneratorLatexCode(self.circles + self.lines).generator_one_picture_packages_in_buffer()
         else:
             if event.key() == QtCore.Qt.Key_Up:
                 self.move(self.pos().x(), self.pos().y() - CO.STEP)
