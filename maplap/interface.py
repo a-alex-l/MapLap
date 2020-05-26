@@ -264,12 +264,14 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         lines, circles = detect.detect(CO.DRAG_AREA)
 
         #change!!!
-        dialog = QtWidgets.QFileDialog(self)
-        file_out = dialog.getSaveFileName(self, CO.OPEN, "", CO.TEMPLATE_PDF)
-        if file_out[0] != "":
-            gen.GeneratorLatexCode(circles + lines).generator_latex_pdf(
-                file_out[0]
-            )
+
+        
+        # dialog = QtWidgets.QFileDialog(self)
+        # file_out = dialog.getSaveFileName(self, CO.OPEN, "", CO.TEMPLATE_PDF)
+        # if file_out[0] != "":
+        #     gen.GeneratorLatexCode(circles + lines).generator_latex_pdf(
+        #         file_out[0]
+        #     )
 
     def keyPressEvent(self, event):
         """keyboard click events"""
@@ -299,7 +301,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             self.__detect()
         elif event.key() == QtCore.Qt.Key_F4:
             self.__rotate()
-        elif event.modifiers():
+        elif event.modifiers() & QtCore.Qt.ControlModifier:
             if event.key() == QtCore.Qt.Key_Up:
                 self.move(self.pos().x() - CO.STEP, self.pos().y())
             if event.key() == QtCore.Qt.Key_Down:
