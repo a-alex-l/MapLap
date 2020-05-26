@@ -30,6 +30,9 @@ class Point:
     def __add__(self, other):
         return Point(self.x_coord + other.x_coord, self.y_coord + other.y_coord)
 
+    def __sub__(self, other):
+        return self + other * -1;
+
 
 class Line:
     start: Point
@@ -52,10 +55,23 @@ class Line:
                 (self.start.y_coord - self.end.y_coord) ** 2) ** 0.5
 
     def get_cos(self) -> float:
-        return (self.start.x_coord - self.end.x_coord) / self.get_length();
+        return (self.start.x_coord - self.end.x_coord) / self.get_length()
+
+    def get_sin(self) -> float:
+        return (self.start.y_coord - self.end.y_coord) / self.get_length()
 
     def __gt__(self, other):
         return self.get_cos() < other.get_cos()
+
+    def count_intersections(self, gray_image: np.ndarray, speed_rate: float) -> float:
+        count: float = 0
+        for proportion in np.arange(0.0, 1, speed_rate / self.get_length()):
+            now: Point = self.start * proportion + self.end * (1 - proportion)
+            if (0 <= int(round(now.x_coord)) < gray_image.shape[1] and
+                0 <= int(round(now.y_coord)) < gray_image.shape[0] and
+                gray_image[int(round(now.y_coord))][int(round(now.x_coord))] == 255):
+                count = count + speed_rate
+        return count
 
     def swap(self):
         tmp: Point = self.start
@@ -65,8 +81,8 @@ class Line:
     def sprawl_start(self, gray_image: np.ndarray, speed_rate: float):
         start_proportion: float = 1
         now: Point = self.start * start_proportion + self.end * (1 - start_proportion)
-        while (0 <= now.x_coord < gray_image.shape[1] and
-               0 <= now.y_coord < gray_image.shape[0]):
+        while (0 <= int(round(now.x_coord)) < gray_image.shape[1] and
+               0 <= int(round(now.y_coord)) < gray_image.shape[0]):
             if gray_image[int(round(now.y_coord))][int(round(now.x_coord))]:
                 start_proportion += speed_rate / self.get_length()
             else:

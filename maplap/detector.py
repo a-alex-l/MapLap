@@ -73,6 +73,88 @@ class LineDetector:
             line.sprawl_start(gray_image, self.speed_rate)
         return lines
 
+    def clarify_lines(
+            self, gray_image: np.ndarray, lines: List[Line]
+    ) -> List[Line]:
+        lines.sort()
+        ans: List[Line] = []
+        used: List[bool] = [False for _ in range(0, len(lines))]
+        left = 0
+        for i in range(0, len(lines)):
+            if not used[i]:
+                while (abs(lines[left].get_cos() - lines[i].get_cos()) > 0.1 or
+                       abs(lines[left].get_sin() - lines[i].get_sin()) > 0.1):
+                    left = left + 1
+                line = lines[i]
+                for j in range(left, len(lines)):
+                    if (abs(lines[j].get_cos() - line.get_cos()) > 0.1 or
+                            abs(lines[j].get_sin() - line.get_sin()) > 0.1):
+                        break
+                    """show_image = gray_image.copy()
+                    cv2.circle(show_image,
+                               (int(round(line.start.x_coord)), int(round(line.start.y_coord))),
+                               15, (255, 255, 255))
+                    cv2.circle(show_image,
+                               (int(round(line.end.x_coord)), int(round(line.end.y_coord))), 15,
+                               (100, 100, 100))
+                    cv2.circle(show_image, (
+                        int(round(lines[j].start.x_coord)), int(round(lines[j].start.y_coord))), 15,
+                               (255, 255, 255))
+                    cv2.circle(show_image, (
+                        int(round(lines[j].end.x_coord)), int(round(lines[j].end.y_coord))), 15,
+                               (100, 100, 100))
+                    cv2.imshow("tmp", show_image)
+                    cv2.waitKey()"""
+                    if Line(line.start, lines[j].start, 1).get_length() < \
+                            Line(line.end, lines[j].end, 1).get_length():
+                        line.swap(), lines[j].swap()
+                    if Line(line.start, lines[j].start, 1).get_length() < \
+                            Line(line.start, lines[j].end, 1).get_length():
+                        lines[j].swap()
+                    if Line(line.start, lines[j].start, 1).get_length() < \
+                            Line(line.end, lines[j].start, 1).get_length():
+                        line.swap()
+
+                    line_s_s = Line(line.start, lines[j].start, 1)
+                    line_e_e = Line(line.end, lines[j].end, 1)
+
+                    if ((abs(line_s_s.get_length() - (line.get_length() +
+                             lines[j].get_length() + line_e_e.get_length())) < 0.1 or
+                         abs(line_s_s.get_length() + line_e_e.get_length() -
+                             (line.get_length() + lines[j].get_length())) < 0.1) and
+                            line_e_e.count_intersections(gray_image, self.speed_rate)
+                            > 0.2 * line_e_e.get_length()):
+                        used[j] = True
+                        if (line.get_length() < line_s_s.get_length() and
+                                lines[j].get_length() < line_s_s.get_length()):
+                            """print(abs(line_s_s.get_length() - (line.get_length() +
+                                                               lines[
+                                                                   j].get_length() + line_e_e.get_length())),
+                                  " ", abs(line_s_s.get_length() + line_e_e.get_length() -
+                                           (line.get_length() + lines[j].get_length())), " ", line_e_e.count_intersections(gray_image, self.speed_rate))
+                            show_image = gray_image.copy()
+                            cv2.circle(show_image,
+                                       (int(round(line.start.x_coord)), int(round(line.start.y_coord))),
+                                       15, (255, 255, 255))
+                            cv2.circle(show_image,
+                                       (int(round(line.end.x_coord)), int(round(line.end.y_coord))), 15,
+                                       (100, 100, 100))
+                            cv2.circle(show_image, (
+                            int(round(lines[j].start.x_coord)), int(round(lines[j].start.y_coord))), 15,
+                                       (255, 255, 255))
+                            cv2.circle(show_image, (
+                            int(round(lines[j].end.x_coord)), int(round(lines[j].end.y_coord))), 15,
+                                       (100, 100, 100))
+                            cv2.imshow("tmp", show_image)
+                            cv2.waitKey()
+                            line = Line(line.start, lines[j].start, 1)"""
+                        else:
+                            if lines[j].get_length() < line.get_length():
+                                line = lines[j]
+
+                ans.append(line)
+        return ans
+
 
 class CircleDetector:
     is_circle: float
@@ -192,6 +274,22 @@ class CircleDetector:
                 circles.append(center)
         return circles
 
+    def find_concentric(
+            self, gray_image: np.ndarray, circles: List[Circle]
+    ) -> List[Circle]:
+        circles_ans: List[Circle] = circles.copy()
+        for circle in circles:
+            for radius in \
+                list(range(self.min_radius, int(circle.radius - circle.line_width / 2) - 5)) +\
+                list(range(int(circle.radius + circle.line_width / 2) + 5, gray_image.shape[0])):
+                new_circle = Circle(circle.center, radius, 1)
+                if (new_circle.count_intersections(gray_image, self.speed_rate * radius / 5)
+                    > self.is_circle * 2 * np.pi * radius):
+                    self._find_right_center_and_radius(gray_image, new_circle, self.max_thickness)
+                    new_circle.find_line_width(gray_image, self.is_circle, self.speed_rate)
+                    circles_ans.append(new_circle)
+        return circles_ans
+
 
 class Detector:
     contrast: Contrast
@@ -228,13 +326,13 @@ class Detector:
         image = self._get_finds(lines, circles, 255 * np.ones(input_image.shape, input_image.dtype))
         cv2.imwrite(file_path, image)
 
-    def normal_canny(self,  gray_image: np.ndarray) -> np.ndarray:
+    def normal_canny(self, gray_image: np.ndarray) -> np.ndarray:
         canny_image = gray_image.copy()
         for i in range(1, gray_image.shape[0] - 1):
             for j in range(1, gray_image.shape[1] - 1):
                 if (gray_image[i][j + 1] != 0 and gray_image[i][j - 1] != 0 and
-                   gray_image[i + 1][j] != 0 and gray_image[i - 1][j] != 0 and
-                   gray_image[i][j] != 0):
+                        gray_image[i + 1][j] != 0 and gray_image[i - 1][j] != 0 and
+                        gray_image[i][j] != 0):
                     canny_image[i][j] = 0
         return canny_image
 
@@ -243,15 +341,18 @@ class Detector:
         gray_image = self.contrast.get_black_white_image(input_image)
 
         circles_centers = self.detector_circles.detect_centers_of_circles(gray_image)
-        circles = self.detector_circles.clarify_circles(gray_image, circles_centers)
+        circles_non_concentric = self.detector_circles.clarify_circles(gray_image, circles_centers)
+        circles = self.detector_circles.find_concentric(gray_image, circles_non_concentric)
 
         canny_image = self.normal_canny(gray_image)
         lines_preform = self.detector_lines.detect_lines_without_width(canny_image)
-        cv2.imshow("before", self._get_finds(lines_preform, circles, input_image))
-        lines = self.detector_lines.lines_extension(lines_preform, gray_image)
+        cv2.imshow("1", self._get_finds(lines_preform, circles, input_image))
+        long_lines = self.detector_lines.lines_extension(lines_preform, gray_image)
+        cv2.imshow("2", self._get_finds(long_lines, circles, input_image))
+        lines = self.detector_lines.clarify_lines(gray_image, long_lines)
+        cv2.imshow("3", self._get_finds(lines, circles, input_image))
 
         cv2.imshow("canny", canny_image)
-        cv2.imshow("after", self._get_finds(lines, circles, input_image))
 
         self._show_finds(file_path, lines, circles)
         return lines, circles
