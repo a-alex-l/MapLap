@@ -2,6 +2,8 @@ from pylatex import Document, TikZ, TikZOptions, NoEscape
 
 import tkinter as tk
 
+import pyperclip
+
 from geometry import Circle, Line, Point
 
 
@@ -72,14 +74,18 @@ class GeneratorLatexCode:
                 self.__add_line(picture, i)
         return picture
 
-    def generator_latex_str(self) -> str:
-        return self.doc.dumps()
+    @staticmethod
+    def add_in_buffer(str):
+        pyperclip.copy(str)
 
-    def generator_one_picture_packages_str(self) -> str:
-        return self.pic.dumps_packages()
+    def generator_latex_in_buffer(self):
+        self.add_in_buffer(self.doc.dumps())
 
-    def generator_one_picture_str(self) -> str:
-        return self.pic.dumps()
+    def generator_one_picture_packages_in_buffer(self):
+        self.add_in_buffer(self.pic.dumps_packages())
+
+    def generator_one_picture_in_buffer(self):
+        self.add_in_buffer(self.pic.dumps())
 
     def generator_latex_tex(self, filename):
         self.doc.generate_tex(filename)
