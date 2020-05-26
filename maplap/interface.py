@@ -255,6 +255,21 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.area.y_start = max(self.area.y_start, CO.ZERO)
         self.area.x_end = min(self.area.x_end, self.picture_in.width())
         self.area.y_end = min(self.area.y_end, self.picture_in.height() + CO.CURSOR)
+    
+    def give_part_picture(self):
+        self.fix_param()
+        self.settings.save_settings()
+        self.save_drag()
+        detect = detector.Detector(self.settings)
+        lines, circles = detect.detect(CO.DRAG_AREA)
+
+        #change!!!
+        dialog = QtWidgets.QFileDialog(self)
+        file_out = dialog.getSaveFileName(self, CO.OPEN, "", CO.TEMPLATE_PDF)
+        if file_out[0] != "":
+            gen.GeneratorLatexCode(circles + lines).generator_latex_pdf(
+                file_out[0]
+            )
 
     def keyPressEvent(self, event):
         """keyboard click events"""
@@ -297,6 +312,13 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
                     self.save_image()
                     self.clear_drag()
                     self.resize_window()
+            elif event.key() == QtCore.Qt.Key_C:
+                if self.action == "select":
+                    self.give_part_picture()
+                    self.area = Rectangle()
+            elif event.key() == QtCore.Qt.Key_D:
+                #change!!!
+                pass
         else:
             if event.key() == QtCore.Qt.Key_Up:
                 self.move(self.pos().x(), self.pos().y() - CO.STEP)
@@ -334,7 +356,7 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
         self.picture_in.mousePressEvent = self.mouse_press_event_select
         self.picture_in.mouseReleaseEvent = self.mouse_release_event_select
 
-    def dragging(self, event):
+    def save_drag(self):
         self.check_area_coord()
         self.resizeEvent(CO.UPDATE)
         x_del = self.area.x_end - self.area.x_start
@@ -343,6 +365,11 @@ class MainWindow(QtWidgets.QMainWindow, UiMapLap):
             self.area.x_start, self.area.y_start, x_del, y_del,
         )
         copy.save(CO.DRAG_AREA, CO.FORMAT)
+
+    def dragging(self, event):
+        self.save_drag()
+        x_del = self.area.x_end - self.area.x_start
+        y_del = self.area.y_end - self.area.y_start
         self.setAcceptDrops(True)
         self.is_drag_area = False
         self.drag_area = DragArea(self)
