@@ -1,5 +1,6 @@
 import math
 from typing import List
+import time
 
 import cv2
 import numpy as np
@@ -90,69 +91,34 @@ class LineDetector:
                     if (abs(lines[j].get_cos() - line.get_cos()) > 0.1 or
                             abs(lines[j].get_sin() - line.get_sin()) > 0.1):
                         break
-                    """show_image = gray_image.copy()
-                    cv2.circle(show_image,
-                               (int(round(line.start.x_coord)), int(round(line.start.y_coord))),
-                               15, (255, 255, 255))
-                    cv2.circle(show_image,
-                               (int(round(line.end.x_coord)), int(round(line.end.y_coord))), 15,
-                               (100, 100, 100))
-                    cv2.circle(show_image, (
-                        int(round(lines[j].start.x_coord)), int(round(lines[j].start.y_coord))), 15,
-                               (255, 255, 255))
-                    cv2.circle(show_image, (
-                        int(round(lines[j].end.x_coord)), int(round(lines[j].end.y_coord))), 15,
-                               (100, 100, 100))
-                    cv2.imshow("tmp", show_image)
-                    cv2.waitKey()"""
-                    if Line(line.start, lines[j].start, 1).get_length() < \
-                            Line(line.end, lines[j].end, 1).get_length():
-                        line.swap(), lines[j].swap()
                     if Line(line.start, lines[j].start, 1).get_length() < \
                             Line(line.start, lines[j].end, 1).get_length():
                         lines[j].swap()
                     if Line(line.start, lines[j].start, 1).get_length() < \
                             Line(line.end, lines[j].start, 1).get_length():
                         line.swap()
-
+                    if Line(line.start, lines[j].start, 1).get_length() < \
+                            Line(line.end, lines[j].end, 1).get_length():
+                        line.swap(), lines[j].swap()
                     line_s_s = Line(line.start, lines[j].start, 1)
                     line_e_e = Line(line.end, lines[j].end, 1)
-
                     if ((abs(line_s_s.get_length() - (line.get_length() +
-                             lines[j].get_length() + line_e_e.get_length())) < 0.1 or
+                              lines[j].get_length() + line_e_e.get_length())) < 0.5 or
                          abs(line_s_s.get_length() + line_e_e.get_length() -
-                             (line.get_length() + lines[j].get_length())) < 0.1) and
+                             (line.get_length() + lines[j].get_length())) < 0.5) and
                             line_e_e.count_intersections(gray_image, self.speed_rate)
                             > 0.2 * line_e_e.get_length()):
                         used[j] = True
                         if (line.get_length() < line_s_s.get_length() and
                                 lines[j].get_length() < line_s_s.get_length()):
-                            """print(abs(line_s_s.get_length() - (line.get_length() +
-                                                               lines[
-                                                                   j].get_length() + line_e_e.get_length())),
-                                  " ", abs(line_s_s.get_length() + line_e_e.get_length() -
-                                           (line.get_length() + lines[j].get_length())), " ", line_e_e.count_intersections(gray_image, self.speed_rate))
-                            show_image = gray_image.copy()
-                            cv2.circle(show_image,
-                                       (int(round(line.start.x_coord)), int(round(line.start.y_coord))),
-                                       15, (255, 255, 255))
-                            cv2.circle(show_image,
-                                       (int(round(line.end.x_coord)), int(round(line.end.y_coord))), 15,
-                                       (100, 100, 100))
-                            cv2.circle(show_image, (
-                            int(round(lines[j].start.x_coord)), int(round(lines[j].start.y_coord))), 15,
-                                       (255, 255, 255))
-                            cv2.circle(show_image, (
-                            int(round(lines[j].end.x_coord)), int(round(lines[j].end.y_coord))), 15,
-                                       (100, 100, 100))
-                            cv2.imshow("tmp", show_image)
-                            cv2.waitKey()
-                            line = Line(line.start, lines[j].start, 1)"""
+                            line = Line(line.start, lines[j].start, 1)
                         else:
                             if lines[j].get_length() < line.get_length():
                                 line = lines[j]
 
                 ans.append(line)
+        for line in ans:
+            line.sprawl_line(gray_image, self.speed_rate)
         return ans
 
 
@@ -233,15 +199,15 @@ class CircleDetector:
         if centers is not None:
             circles: list = []
             if centers is not None:
-                for center in centers[0, :1000]:
+                for center in centers[0, :2000]:
                     x_center, y_center, radius = center
                     circle = Circle(Point(x_center, y_center), radius, 1.0)
-                    self.speed_rate = self.speed_rate * radius / 5
+                    self.speed_rate = self.speed_rate * radius / 2
                     if (circle.count_intersections(gray_image, self.speed_rate)
                             > self.is_circle * np.pi * circle.radius):
                         self._find_right_center_and_radius(gray_image, circle)
                         circles.append(circle)
-                    self.speed_rate = self.speed_rate / (radius / 5)
+                    self.speed_rate = self.speed_rate / (radius / 2)
             return circles
         return []
 
@@ -249,29 +215,28 @@ class CircleDetector:
             self, gray_image: np.ndarray, centers: List[Circle]
     ) -> List[Circle]:
         circles: list = []
+        used: List[bool] = [False for _ in range(0, len(centers))]
         centers.sort()
-        for center in centers:
-            if (center.count_intersections(gray_image, self.speed_rate)
-                    > self.is_circle * 2 * np.pi * center.radius):
-                self._find_right_center_and_radius(gray_image, center, self.max_thickness)
-                center.find_line_width(gray_image, self.is_circle, self.speed_rate)
-                for center_delete in centers:
-                    if (
-                            math.hypot(
+        for i in range(0, len(centers)):
+            if not used[i]:
+                center = centers[i]
+                if (center.count_intersections(gray_image, self.speed_rate * center.radius / 2)
+                        > self.is_circle * 1.5 * np.pi * center.radius):
+                    self._find_right_center_and_radius(gray_image, center, self.max_thickness)
+                    center.find_line_width(gray_image, self.is_circle, self.speed_rate)
+                    for j in range(i + 1, len(centers)):
+                        if (math.hypot(
+                                center.center.x_coord - centers[j].center.x_coord,
+                                center.center.y_coord - centers[j].center.y_coord)
+                                <= 2 * center.line_width):
+                            used[j] = True
+                    for center_delete in circles:
+                        if (math.hypot(
                                 center.center.x_coord - center_delete.center.x_coord,
                                 center.center.y_coord - center_delete.center.y_coord)
-                            <= 2 * center.line_width
-                    ):
-                        centers.remove(center_delete)
-                for center_delete in circles:
-                    if (
-                            math.hypot(
-                                center.center.x_coord - center_delete.center.x_coord,
-                                center.center.y_coord - center_delete.center.y_coord)
-                            <= 2 * center.line_width
-                    ):
-                        circles.remove(center_delete)
-                circles.append(center)
+                                <= 2 * center.line_width):
+                            circles.remove(center_delete)
+                    circles.append(center)
         return circles
 
     def find_concentric(
@@ -279,12 +244,15 @@ class CircleDetector:
     ) -> List[Circle]:
         circles_ans: List[Circle] = circles.copy()
         for circle in circles:
-            for radius in \
-                list(range(self.min_radius, int(circle.radius - circle.line_width / 2) - 5)) +\
-                list(range(int(circle.radius + circle.line_width / 2) + 5, gray_image.shape[0])):
-                new_circle = Circle(circle.center, radius, 1)
-                if (new_circle.count_intersections(gray_image, self.speed_rate * radius / 5)
-                    > self.is_circle * 2 * np.pi * radius):
+            new_circle = \
+                Circle(Point(circle.center.x_coord, circle.center.y_coord), self.min_radius, 1)
+            for new_circle.radius in \
+                    list(range(self.min_radius, int(circle.radius - circle.line_width / 2) - 5)) + \
+                    list(range(int(circle.radius + circle.line_width / 2) + 5,
+                               int(circle.center.x_coord))):
+                if (new_circle.count_intersections(gray_image,
+                                                   self.speed_rate * new_circle.radius / 2) >
+                        self.is_circle * 2 * np.pi * new_circle.radius):
                     self._find_right_center_and_radius(gray_image, new_circle, self.max_thickness)
                     new_circle.find_line_width(gray_image, self.is_circle, self.speed_rate)
                     circles_ans.append(new_circle)
@@ -313,13 +281,20 @@ class Detector:
                 cv2.circle(image, (int(round(circle.center.x_coord)),
                                    int(round(circle.center.y_coord))),
                            int(round(circle.radius + circle.line_width / 2)),
-                           (0, 255, 0), int(round(circle.line_width)))
+                           (0, 0, 0), int(round(circle.line_width)))
         if lines:
             for line in lines:
                 cv2.line(image, (int(round(line.start.x_coord)), int(round(line.start.y_coord))),
                          (int(round(line.end.x_coord)), int(round(line.end.y_coord))),
-                         (0, 0, 255), line.line_width)
+                         (0, 0, 0), int(round(line.line_width)), lineType=cv2.LINE_4)
         return image
+
+    def tmp(self, name, show_image):
+        pass
+        """print("Time: ", name, " ", time.perf_counter() - self.now)
+        cv2.imshow(name, show_image)
+        #cv2.waitKey()
+        self.now = time.perf_counter()"""
 
     def _show_finds(self, file_path: str, lines: list, circles: list):
         input_image = cv2.imread(file_path)
@@ -337,22 +312,24 @@ class Detector:
         return canny_image
 
     def detect(self, file_path: str) -> List[Line] and List[Circle]:
+        self.now = time.perf_counter()
         input_image = cv2.imread(file_path)
         gray_image = self.contrast.get_black_white_image(input_image)
-
-        circles_centers = self.detector_circles.detect_centers_of_circles(gray_image)
-        circles_non_concentric = self.detector_circles.clarify_circles(gray_image, circles_centers)
-        circles = self.detector_circles.find_concentric(gray_image, circles_non_concentric)
-
+        self.tmp("0", self._get_finds([], [], input_image))
         canny_image = self.normal_canny(gray_image)
+        self.tmp("1 Canny", canny_image)
         lines_preform = self.detector_lines.detect_lines_without_width(canny_image)
-        cv2.imshow("1", self._get_finds(lines_preform, circles, input_image))
+        self.tmp("2", self._get_finds(lines_preform, [], input_image))
         long_lines = self.detector_lines.lines_extension(lines_preform, gray_image)
-        cv2.imshow("2", self._get_finds(long_lines, circles, input_image))
+        self.tmp("3", self._get_finds(long_lines, [], input_image))
         lines = self.detector_lines.clarify_lines(gray_image, long_lines)
-        cv2.imshow("3", self._get_finds(lines, circles, input_image))
-
-        cv2.imshow("canny", canny_image)
-
+        self.tmp("5", self._get_finds(lines, [], input_image))
+        circles_centers = self.detector_circles.detect_centers_of_circles(gray_image)
+        self.tmp("6", self._get_finds(lines, circles_centers, input_image))
+        circles_non_concentric = self.detector_circles.clarify_circles(gray_image, circles_centers)
+        self.tmp("7", self._get_finds(lines, circles_non_concentric, input_image))
+        circles = self.detector_circles.find_concentric(gray_image, circles_non_concentric)
+        self.tmp("8", self._get_finds(lines, circles, input_image))
+        #print("Lines: ", len(lines), " Circles: ", len(circles))
         self._show_finds(file_path, lines, circles)
         return lines, circles

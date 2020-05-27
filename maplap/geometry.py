@@ -24,6 +24,9 @@ class Point:
                 and self.y_coord < other.y_coord
         )
 
+    def get(self):
+        return Point(self.x_coord, self.y_coord)
+
     def __mul__(self, proportion: float):
         return Point(self.x_coord * proportion, self.y_coord * proportion)
 
@@ -31,7 +34,16 @@ class Point:
         return Point(self.x_coord + other.x_coord, self.y_coord + other.y_coord)
 
     def __sub__(self, other):
-        return self + other * -1;
+        return self + other * -1
+
+    def make_normal(self):
+        tmp: float = self.x_coord
+        self.x_coord = self.y_coord
+        self.y_coord = -tmp
+        return self
+
+    def get_vector_length(self):
+        return (self.x_coord * self.x_coord + self.y_coord * self.y_coord) ** 0.5
 
 
 class Line:
@@ -63,13 +75,29 @@ class Line:
     def __gt__(self, other):
         return self.get_cos() < other.get_cos()
 
+    def get(self):
+        return Line(self.start.get(), self.end.get(), self.line_width)
+
+    def rotate(self, plus):
+        vector_normal: Point = self.get_normal() * plus
+        vector_mid: Point = self.start * 0.5 + self.end * 0.5
+        vector_start: Point = self.start - vector_mid + vector_normal
+        vector_start = vector_start * (1 / vector_start.get_vector_length()) * \
+                        (self.start - vector_mid).get_vector_length()
+        self.start = vector_start + vector_mid
+        self.end = vector_mid - vector_start
+
+    def get_normal(self) -> Point:
+        return (self.start * (1 / self.get_length()) + self.end * (1 - 1 / self.get_length())
+                - self.end).make_normal()
+
     def count_intersections(self, gray_image: np.ndarray, speed_rate: float) -> float:
         count: float = 0
         for proportion in np.arange(0.0, 1, speed_rate / self.get_length()):
             now: Point = self.start * proportion + self.end * (1 - proportion)
             if (0 <= int(round(now.x_coord)) < gray_image.shape[1] and
-                0 <= int(round(now.y_coord)) < gray_image.shape[0] and
-                gray_image[int(round(now.y_coord))][int(round(now.x_coord))] == 255):
+                    0 <= int(round(now.y_coord)) < gray_image.shape[0] and
+                    gray_image[int(round(now.y_coord))][int(round(now.x_coord))] == 255):
                 count = count + speed_rate
         return count
 
@@ -93,6 +121,49 @@ class Line:
             now: Point = self.start * start_proportion + self.end * (1 - start_proportion)
         self.start = self.start * (start_proportion - speed_rate / self.get_length()) + \
                      self.end * (1 - start_proportion + speed_rate / self.get_length())
+
+    def find_line_width(
+            self, gray_image: np.ndarray, speed_rate: float
+    ) -> None:
+        vector_normal: Point = self.get_normal()
+        line_width_along_normal: float = 1.5
+        line_width_opposite_normal: float = 1.5
+        line_check = Line(self.start + vector_normal, self.end + vector_normal, 1)
+        while line_check.count_intersections(gray_image, speed_rate) > \
+                0.95 * line_check.get_length():
+            line_width_along_normal = line_width_along_normal + 1
+            line_check = Line(self.start + vector_normal * line_width_along_normal,
+                              self.end + vector_normal * line_width_along_normal, 1)
+        line_check = Line(self.start - vector_normal, self.end - vector_normal, 1)
+        while line_check.count_intersections(gray_image, speed_rate) > \
+                0.95 * line_check.get_length():
+            line_width_opposite_normal = line_width_opposite_normal + 1
+            line_check = Line(self.start - vector_normal * line_width_opposite_normal,
+                              self.end - vector_normal * line_width_opposite_normal, 1)
+        self.line_width = line_width_along_normal + line_width_opposite_normal - 2.0
+        self.start = self.start + vector_normal * \
+                     ((line_width_along_normal - line_width_opposite_normal) / 2)
+        self.end = self.end + vector_normal * \
+                   ((line_width_along_normal - line_width_opposite_normal) / 2)
+
+    def sprawl_line(self, gray_image, speed_rate):
+        self.find_line_width(gray_image, speed_rate)
+        new_line = self.get()
+        while True:
+            self = new_line
+            new_line = self.get()
+            new_line.rotate(0.5)
+            new_line.find_line_width(gray_image, speed_rate)
+            if new_line.get_length() * new_line.line_width < self.get_length() * self.line_width:
+                break
+        while True:
+            self = new_line
+            new_line = self.get()
+            new_line.rotate(-0.5)
+            new_line.find_line_width(gray_image, speed_rate)
+            if new_line.get_length() * new_line.line_width < self.get_length() * self.line_width:
+                break
+
 
 
 class Circle:
