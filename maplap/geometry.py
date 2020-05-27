@@ -148,7 +148,7 @@ class Line:
 
     def sprawl_line(self, gray_image, speed_rate):
         self.find_line_width(gray_image, speed_rate)
-        for i in range(-50, 50):
+        for i in range(-1, 1):
             new_line = self.get()
             new_line.rotate(i / 10)
             new_line.sprawl_start(gray_image, speed_rate)
