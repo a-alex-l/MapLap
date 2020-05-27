@@ -1,17 +1,20 @@
 """constant file"""
 
+
 START_PICTURE = "templates/MapLap2.png"
 TEMP = "templates/temp.png"
+DRAG_AREA = "templates/drag_area.png"
 RES = "templates/MapLap_res.png"
 PENSIL = "templates/pensil.png"
 ERASER = "templates/eraser.png"
+LINE = "templates/line.png"
+CIRCLE = "templates/circle.png"
 SETTINGS = "templates/settigs.txt"
 DEFAULT_SETTINGS = "templates/default_settigs.txt"
-TEX_RES = "templates/MapLap_res"
-PDF_RES = "templates/MapLap_res"
+OPEN = "Open"
 FORMAT = "PNG"
 SIZE_PANEL = 140
-SIZE_LINE = 25
+SIZE_LINE = 24
 BORDER = 9
 ROTATE = 90
 FULL_ROTATE = 360
@@ -26,6 +29,8 @@ WHITE_W = 5
 OPACITY_AREA = 0.3
 UPDATE = True
 TEMPLATE_FILE = "*.png *.pdf *.jpg *jpeg *.bmp"
+TEMPLATE_TEX = ".tex"
+TEMPLATE_PDF = ".pdf"
 CHANGE = True
 PICTURE_OUT = False
 DELETE = True

@@ -6,12 +6,6 @@ import constant as CO
 class UiMapLap:
     """Main window ui"""
 
-    # pylint: disable=R0902
-    # pylint: disable=C0103
-    # snake_case
-    # pylint: disable=R0915
-    # pylint: disable=W0201
-    # without this there is no way
     def setupUi(self, MapLap, screen_w, screen_h):
         """initial set up"""
         MapLap.setObjectName("MapLap")
@@ -86,6 +80,7 @@ class UiMapLap:
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.painting = QtWidgets.QHBoxLayout()
         self.painting.setObjectName("painting")
+        self.painting.setSpacing(0)
         self.pencil = QtWidgets.QPushButton(self.panel_tab)
         self.pencil.setText("")
         icon = QtGui.QIcon()
@@ -100,6 +95,20 @@ class UiMapLap:
         self.eraser.setIcon(icon1)
         self.eraser.setObjectName("eraser")
         self.painting.addWidget(self.eraser)
+        self.lineI = QtWidgets.QPushButton(self.panel_tab)
+        self.lineI.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(CO.LINE), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.lineI.setIcon(icon)
+        self.lineI.setObjectName("lineI")
+        self.painting.addWidget(self.lineI)
+        self.circleI = QtWidgets.QPushButton(self.panel_tab)
+        self.circleI.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(CO.CIRCLE), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.circleI.setIcon(icon)
+        self.circleI.setObjectName("circleI")
+        self.painting.addWidget(self.circleI)
         self.verticalLayout_2.addLayout(self.painting)
         self.detect = QtWidgets.QPushButton(self.panel_tab)
         self.detect.setObjectName("detect")
