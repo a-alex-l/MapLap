@@ -189,7 +189,7 @@ class CircleDetector:
         centers: list = cv2.HoughCircles(
             gray_image,
             cv2.HOUGH_GRADIENT,
-            1.2,
+            1,
             minDist=0.0001,
             param1=50,
             param2=self.threshold_center,

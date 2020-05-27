@@ -148,22 +148,15 @@ class Line:
 
     def sprawl_line(self, gray_image, speed_rate):
         self.find_line_width(gray_image, speed_rate)
-        new_line = self.get()
-        while True:
-            self = new_line
+        for i in range(-50, 50):
             new_line = self.get()
-            new_line.rotate(0.5)
+            new_line.rotate(i / 10)
+            new_line.sprawl_start(gray_image, speed_rate)
+            new_line.swap()
+            new_line.sprawl_start(gray_image, speed_rate)
             new_line.find_line_width(gray_image, speed_rate)
-            if new_line.get_length() * new_line.line_width < self.get_length() * self.line_width:
-                break
-        while True:
-            self = new_line
-            new_line = self.get()
-            new_line.rotate(-0.5)
-            new_line.find_line_width(gray_image, speed_rate)
-            if new_line.get_length() * new_line.line_width < self.get_length() * self.line_width:
-                break
-
+            if new_line.get_length() * new_line.line_width > self.get_length() * self.line_width:
+                self = new_line
 
 
 class Circle:
